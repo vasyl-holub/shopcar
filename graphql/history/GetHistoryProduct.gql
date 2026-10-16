@@ -1,0 +1,18 @@
+query GetHistoryProduct($id: Int!) {
+  historyProduct(id: $id) {
+    id
+    product {
+      id
+      name
+      manufacturer {
+        id
+        name
+      }
+    }
+    user {
+      id
+      email
+    }
+    created
+  }
+}

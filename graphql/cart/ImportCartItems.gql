@@ -1,0 +1,26 @@
+mutation ImportCartItems($data: ImportCartItemsMutationInput!) {
+  importCartItems(input: $data) {
+    errors {
+      field
+      messages
+    }
+  }
+}
+
+{
+  "data": {
+    "store": 9,
+    "manufacturer": 1,
+    "number": 2,
+    "count": 5,
+    "startRow": 1,
+    "file": null
+  }
+}
+
+#  реальний файл підставляється через map → variables.data.file.
+
+
+{
+  "file0": ["variables.data.file"]
+}

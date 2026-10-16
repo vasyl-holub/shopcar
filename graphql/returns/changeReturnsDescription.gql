@@ -1,0 +1,11 @@
+mutation {
+  changeReturnsDescription(input: {
+    returns: "UmV0dXJuc05vZGU6MTIz"   # ID (global/encrypted id) об'єкта Returns
+    newDescription: "Товар прийшов з подряпиною на корпусі"
+  }) {
+    errors {
+      field
+      messages
+    }
+  }
+}

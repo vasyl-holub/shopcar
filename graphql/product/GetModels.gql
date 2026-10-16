@@ -1,0 +1,23 @@
+﻿fragment ModelFields on CarModelNode {
+  id
+  slug
+  name
+  yearStart
+  yearEnd
+  body {
+    id
+    name
+  }
+  brand {
+    id
+    name
+  }
+}
+
+query GetModels($brandSlug: String) {
+  modelAll(brand_Slug: $brandSlug) {
+    edges {
+      ...ModelFields
+    }
+  }
+}

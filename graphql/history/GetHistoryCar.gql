@@ -1,0 +1,18 @@
+query GetHistoryCar($id: Int!) {
+  historyCar(id: $id) {
+    id
+    car {
+      id
+      name
+      manufacturer {
+        id
+        name
+      }
+    }
+    user {
+      id
+      email
+    }
+    created
+  }
+}

@@ -1,0 +1,27 @@
+query {
+  returnsNode(id: "UmV0dXJuc05vZGU6MTIz") {
+    id
+    reason
+    reaction
+    description
+    dispatchInfo
+    dispatch
+    created
+    modified
+    count
+    images
+    orderItem {
+      id
+      product {
+        id
+        shortName
+      }
+    }
+    manager {
+      id
+      firstName
+      lastName
+    }
+    accountUrl
+  }
+}

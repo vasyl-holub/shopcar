@@ -1,0 +1,8 @@
+mutation UpdateCartItem($cartItemIds: [ID], $count: Int, $isActive: Boolean) {
+  changeCartItems(cartItems: $cartItemIds, count: $count, isActive: $isActive) {
+    errors {
+      messages
+      field
+    }
+  }
+}

@@ -1,0 +1,20 @@
+query GetKitNode($id: ID!, $priceId: ID!, $currencyName: String) {
+  kitNode(id: $id) {
+    id
+    type
+    priceData(priceId: $priceId, currencyName: $currencyName) {
+      mainProductPrice
+      selectedProductPrice
+      oldTotal
+      newTotal
+    }
+    products {
+      edges {
+        node {
+          id
+          name
+        }
+      }
+    }
+  }
+}

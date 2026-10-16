@@ -1,0 +1,14 @@
+﻿query GetCarChildrenCategories($id: ID!) {
+  category(id: $id) {
+    id
+    name
+    children {
+      edges {
+        id
+        name
+        isLeafNode
+      }
+    }
+    isLeafNode
+  }
+}

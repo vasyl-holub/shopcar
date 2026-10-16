@@ -1,0 +1,9 @@
+﻿query GetCountries {
+  countryAll {
+    edges {
+      id
+      name
+      code
+    }
+  }
+}

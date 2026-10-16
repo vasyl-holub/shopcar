@@ -1,0 +1,8 @@
+﻿mutation DeleteUserCar($carId: ID!) {
+  deleteUserCar(carId: $carId) {
+    errors {
+      field
+      messages
+    }
+  }
+}

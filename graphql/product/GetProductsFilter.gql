@@ -1,0 +1,26 @@
+﻿query GetProductsFilter(
+  $categoryId: String
+  $manufacturers: [String]
+  $attributes: GenericScalar
+) {
+  productAll(group: $categoryId, manufacturers: $manufacturers, attributes: $attributes) {
+    attributes {
+      edges {
+        id
+        code
+        name
+        options {
+          edges {
+            id
+            code
+            name
+          }
+        }
+      }
+    }
+    manufacturers {
+      id
+      name
+    }
+  }
+}

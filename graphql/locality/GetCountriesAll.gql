@@ -1,0 +1,16 @@
+query GetCountriesAll {
+  countryAll {
+    edges {
+      node {
+        id
+        name
+        code
+        iso2
+        currency
+        phoneMask
+        eu
+        isActive
+      }
+    }
+  }
+}

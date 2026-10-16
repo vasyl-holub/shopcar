@@ -1,0 +1,13 @@
+query {
+  returnReactions
+}
+
+{
+  "data": {
+    "returnReactions": [
+      {"value": 0, "label": "Отклонено"},
+      {"value": 1, "label": "Одобрено"},
+      {"value": 2, "label": "Уточните"}
+    ]
+  }
+}

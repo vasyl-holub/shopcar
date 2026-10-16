@@ -1,0 +1,7 @@
+﻿mutation AddProductToFavourites($productId: String!) {
+  addProductLike(product: $productId) {
+    productLike {
+      id
+    }
+  }
+}

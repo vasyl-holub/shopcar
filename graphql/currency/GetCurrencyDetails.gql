@@ -1,0 +1,13 @@
+query GetCurrencyDetails($id: ID!) {
+  currency(id: $id) {
+    id
+    name
+    history {
+      edges {
+        id
+        userValue
+        created
+      }
+    }
+  }
+}

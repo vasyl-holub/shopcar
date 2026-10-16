@@ -1,0 +1,9 @@
+﻿query GetCarCategories($carId: String!) {
+  categoryAll(car: $carId) {
+    edges {
+      id
+      name
+      isLeafNode
+    }
+  }
+}

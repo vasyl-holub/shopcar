@@ -1,0 +1,11 @@
+﻿query getNews($type: Decimal, $limit: Int, $isActive: Boolean) {
+  contentAll(type: $type, limit: $limit, isActive: $isActive) {
+    edges {
+      id
+      name
+      created
+      textShort
+      image(size: "360x360")
+    }
+  }
+}

@@ -1,0 +1,29 @@
+﻿fragment OrderCommentFields on OrderCommentNode {
+  id
+  type
+  createdOn: created
+  text
+  manager {
+    id
+    firstName
+    lastName
+  }
+  isRead
+}
+
+
+fragment ErrorFields on ErrorType {
+  field
+  messages
+}
+
+mutation CreateOrderComment($data: AddOrderCommentMutationInput!) {
+  addOrderComment(input: $data) {
+    comment {
+      ...OrderCommentFields
+    }
+    errors {
+      ...ErrorFields
+    }
+  }
+}

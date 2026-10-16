@@ -1,0 +1,25 @@
+query {
+  globalConfig {
+    name
+    companyName
+    anonymousCheckout
+    defaultPage
+    onlyAvailable
+    buyOnlyAvailable
+    isBlocked
+    defaultCurrency
+    userCurrency
+    userAccountCurrency
+    defaultSort
+    groupDefaultSort
+    showCurrency
+    maxProductCount
+    itemsPerPage
+    hideInfo
+    cancelOrderDays
+    defaultPayMethod
+    defaultDelivery
+    showLocalstoreName
+    storeItemMaxCount
+  }
+}

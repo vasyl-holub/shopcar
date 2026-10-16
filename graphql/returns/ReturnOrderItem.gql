@@ -1,0 +1,43 @@
+mutation ReturnOrderItem(
+  $reason: String!
+  $description: String
+  $count: Int!
+  $images: [Upload]
+  $orderItem: String!
+) {
+  returnOrderItem(
+    input: {
+      reason: $reason
+      description: $description
+      count: $count
+      images: $images
+      orderItem: $orderItem
+    }
+  ) {
+    errors {
+      ...ErrorFields
+    }
+  }
+}
+
+mutation {
+  returnOrderItem(input: {
+    orderItem: "T3JkZXJJdGVtTm9kZToxMjM="   # ID елемента замовлення
+    description: "Товар не підходить за розміром"
+    count: 1
+    reason: 5                              # NOT_SUITABLE
+    images: []                             # Опціонально: список файлів зображень
+  }) {
+    errors {
+      field
+      messages
+    }
+    returns {
+      id
+      description
+      count
+      reason
+      created
+    }
+  }
+}

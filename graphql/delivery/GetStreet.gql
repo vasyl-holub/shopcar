@@ -1,0 +1,12 @@
+query GetStreet($id: Int!) {
+  street(id: $id) {
+    id
+    description
+    ref
+    cityRef
+    streetsTypeRef
+    streetsType
+    isActive
+    modified
+  }
+}

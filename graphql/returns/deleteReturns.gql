@@ -1,0 +1,19 @@
+# Видалення конкретних повернень
+mutation {
+  deleteReturns(returns: ["UmV0dXJuc05vZGU6MTIz", "UmV0dXJuc05vZGU6NDU2"]) {
+    errors {
+      field
+      messages
+    }
+  }
+}
+
+# Видалення всіх повернень користувача без реакції
+mutation {
+  deleteReturns {
+    errors {
+      field
+      messages
+    }
+  }
+}

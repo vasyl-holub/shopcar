@@ -1,0 +1,8 @@
+﻿mutation SaveUserCar($userCarData: UpdateUserCarInput!) {
+  updateUserCar(input: $userCarData) {
+    errors {
+      field
+      messages
+    }
+  }
+}

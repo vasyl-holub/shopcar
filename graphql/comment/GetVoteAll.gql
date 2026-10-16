@@ -1,0 +1,16 @@
+﻿query GetVoteAll($contentType: String!, $objectId: Int!) {
+  voteAll(contentType: $contentType, objectId: $objectId) {
+    edges {
+        id
+        objectId
+        vote
+        date
+        userShortName 
+    }
+  }
+}
+
+{
+   "contentType": "product.product",
+   "objectId": 1700073539
+}

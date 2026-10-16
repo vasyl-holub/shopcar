@@ -1,0 +1,12 @@
+query {
+  returns(id: 123) {
+    id
+    reason
+    reaction
+    description
+    dispatchInfo
+    dispatch
+    created
+    count
+  }
+}

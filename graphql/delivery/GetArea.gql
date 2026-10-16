@@ -1,0 +1,10 @@
+query GetArea($id: Int!) {
+  area(id: $id) {
+    id
+    description
+    ref
+    areasCenter
+    isActive
+    modified
+  }
+}

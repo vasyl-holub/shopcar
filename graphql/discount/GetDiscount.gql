@@ -1,0 +1,6 @@
+query {
+  discount(id: "RGlzY291bnRUZW1wbGF0ZU5vZGU6MTIz") {
+    id
+    name
+  }
+}

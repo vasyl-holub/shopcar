@@ -1,0 +1,15 @@
+query GetRegionsAll($country: ID) {
+  regionAll(country: $country) {
+    edges {
+      node {
+        id
+        name
+        deliveryDays
+        country {
+          id
+          name
+        }
+      }
+    }
+  }
+}

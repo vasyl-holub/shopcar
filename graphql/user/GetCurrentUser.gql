@@ -1,0 +1,58 @@
+﻿query GetCurrentUser($userId: ID!, $currencyName: String!) {
+  user(id: $userId) {
+    id
+    number
+    type: userType
+    firstName
+    lastName
+    fatherName
+    dateJoined
+    phones: phone
+    email
+    company
+    country {
+      id
+      name
+    }
+    region {
+      id
+      name
+    }
+    city
+    district
+    address
+    birthday
+    skype
+    webSite
+    hearAboutUs
+    recipient
+    payMethod {
+      id
+      name
+    }
+    delivery {
+      id
+      name
+    }
+    deliveryInfo
+    denyAdvertisement
+    currency {
+      id
+      name
+    }
+    manager {
+      id
+      firstName
+      lastName
+      phone
+    }
+    itemsPerPage
+    onlyAvailable
+    storeVisibility
+    balance(currencyName: $currencyName)
+    balanceOrder(currencyName: $currencyName)
+    balanceMoney(currencyName: $currencyName)
+    # ToDO: Should be uncommented when the backend will be updated
+    needToPay(currencyName: $currencyName)
+  }
+}

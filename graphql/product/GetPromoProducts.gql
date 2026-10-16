@@ -1,0 +1,24 @@
+﻿query GetPromoProducts($currencyName: String!) {
+  promoProductAll {
+    edges {
+      id
+      number
+      name
+      group {
+        id
+        name
+      }
+      images: images(size: "300x300")
+      price {
+        id
+        count
+        priceUser(currencyName: $currencyName)
+        priceOut(currencyName: $currencyName)
+        priceIn(currencyName: $currencyName)
+        itemDays
+        storeDays
+        isProductDiscount
+      }
+    }
+  }
+}

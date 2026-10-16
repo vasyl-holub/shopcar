@@ -1,0 +1,8 @@
+﻿mutation RemoveCartItem($cartItemIds: [ID]) {
+  deleteCartItems(cartItems: $cartItemIds) {
+    errors {
+      messages
+      field
+    }
+  }
+}

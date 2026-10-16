@@ -1,0 +1,7 @@
+mutation Logout {
+  logoutUser {
+    user {
+      id
+    }
+  }
+}

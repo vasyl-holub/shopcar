@@ -1,0 +1,12 @@
+query GetStreetNode($id: ID!) {
+  streetNode(id: $id) {
+    id
+    description
+    ref
+    cityRef
+    streetsTypeRef
+    streetsType
+    isActive
+    modified
+  }
+}

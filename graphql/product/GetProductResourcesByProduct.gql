@@ -1,0 +1,13 @@
+﻿query GetproductResourcesByProduct($productId: ID!) {
+  productResourcesByProduct(productId: $productId) {
+    id
+    resource
+    typeDisplay 
+    type
+    sort
+  }
+}
+
+{
+    "objectId": 1700073539
+}

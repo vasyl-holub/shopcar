@@ -1,0 +1,66 @@
+query GetReturnRequests(
+  $orderNumber: Decimal
+  $accountNumber: Decimal
+  $reaction: Int
+  $reason: Int
+  $description: String
+  $dispatchInfo: String
+  $createdDateRange: DateRangeFieldInput
+  $product: String
+) {
+  returnsAll(
+    orderNumber: $orderNumber
+    accountNumber: $accountNumber
+    reaction: $reaction
+    reason: $reason
+    description: $description
+    dispatchInfo: $dispatchInfo
+    createdDateRange: $createdDateRange
+    product: $product
+  ) {
+    edges {
+      id
+      reaction
+      user {
+        id
+        firstName
+        lastName
+      }
+      orderItem {
+        id
+        order {
+          id
+          number
+        }
+        product {
+          id
+          name
+          number
+          manufacturer {
+            id
+            name
+          }
+        }
+      }
+      count
+      reason
+      description
+      comment
+      created
+      manager {
+        id
+        firstName
+        lastName
+        shortName
+      }
+      account {
+        id
+      }
+      images
+      # dispatchInfo
+      # dispatch
+      modified
+      needInform
+    }
+  }
+}

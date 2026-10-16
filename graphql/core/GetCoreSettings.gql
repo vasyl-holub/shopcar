@@ -1,0 +1,11 @@
+query {
+  canUserChangeProfile
+  canUserChangeType
+  canUserChangeEmail
+  canUserChangeDelivery
+  canUserImportCart
+  allowAnonymous
+  storeItemMaxCount
+  deliverySelfPickupId
+  getDeliveryApps
+}

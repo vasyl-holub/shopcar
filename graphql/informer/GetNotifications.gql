@@ -1,0 +1,22 @@
+﻿query GetNotifications {
+  informerAll {
+    edges {
+      id
+      subject
+      sender {
+        id
+        firstName
+        lastName
+      }
+      receiver {
+        id
+        firstName
+        lastName
+      }
+      text
+      created
+      isRead
+      isDeleted
+    }
+  }
+}

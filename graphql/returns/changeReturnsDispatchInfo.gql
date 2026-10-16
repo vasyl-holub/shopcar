@@ -1,0 +1,16 @@
+mutation {
+  changeReturnsDispatchInfo(input: {
+    returns: "UmV0dXJuc05vZGU6MTIz"   # ID (global/encrypted id) об'єкта Returns
+    dispatchInfo: "Нова пошта, декларація №20450123456789"
+  }) {
+    errors {
+      field
+      messages
+    }
+    returns {
+      id
+      dispatchInfo
+      dispatch
+    }
+  }
+}

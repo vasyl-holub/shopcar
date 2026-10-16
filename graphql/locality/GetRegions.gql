@@ -1,0 +1,8 @@
+﻿query GetRegions {
+  regionAll {
+    edges {
+      id
+      name
+    }
+  }
+}

@@ -1,0 +1,10 @@
+query GetAreaNode($id: ID!) {
+  areaNode(id: $id) {
+    id
+    description
+    ref
+    areasCenter
+    isActive
+    modified
+  }
+}

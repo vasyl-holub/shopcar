@@ -1,0 +1,48 @@
+﻿fragment OrderFields on OrderNode {
+  id
+  number
+  createdOn: created
+  shippedOn: shipped
+  status
+  isPaid
+  total(currencyName: $currencyName)
+  delivery {
+    id
+    name
+  }
+  city
+  deliveryInfo
+  deliveryDeclaration
+  recipient
+  printUrl(currencyName: $currencyName)
+  canBeCancelled
+}
+
+query GetOrders(
+  $number: Decimal
+  $statuses: [String]
+  $statusExclude: [String]
+  $createdDateRange: DateRangeFieldInput
+  $shippedDateRange: DateRangeFieldInput
+  $partNumber: String
+  $currencyName: String!
+) {
+  orderAll(
+    number: $number
+    statuses: $statuses
+    statusExclude: $statusExclude
+    createdDateRange: $createdDateRange
+    shippedDateRange: $shippedDateRange
+    items_Product_Num: $partNumber
+  ) {
+    edges {
+      ...OrderFields
+      # ToDO: Used to exclude order with no items
+      items {
+        edges {
+          id
+        }
+      }
+    }
+  }
+}

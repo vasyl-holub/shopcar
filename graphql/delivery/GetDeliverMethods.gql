@@ -1,0 +1,8 @@
+query GetDeliverMethods {
+  deliveryAll {
+    edges {
+      id
+      name
+    }
+  }
+}

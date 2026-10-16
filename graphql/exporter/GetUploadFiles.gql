@@ -1,0 +1,15 @@
+query {
+  uploadFileAll {
+    edges {
+      node {
+        id
+        name
+        file
+        url
+        slug
+        created
+        modified
+      }
+    }
+  }
+}

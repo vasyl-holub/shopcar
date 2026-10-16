@@ -1,0 +1,24 @@
+query {
+  orderBonuses(
+    id: 123
+    user: 456
+    order: 789
+    isProcessed: true
+  ) {
+    edges {
+      id
+      order {
+        id
+        number
+      }
+      bonusValue
+      value
+      availableAt
+      isProcessed
+      account {
+        id
+      }
+      created
+    }
+  }
+}

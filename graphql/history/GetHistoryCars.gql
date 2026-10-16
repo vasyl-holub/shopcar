@@ -1,0 +1,22 @@
+query GetHistoryCars($id: Int, $sort: String) {
+  historyCarAll(id: $id, orderBy: $sort) {
+    edges {
+      node {
+        id
+        car {
+          id
+          name
+          manufacturer {
+            id
+            name
+          }
+        }
+        user {
+          id
+          email
+        }
+        created
+      }
+    }
+  }
+}

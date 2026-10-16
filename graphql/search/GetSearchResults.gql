@@ -1,0 +1,35 @@
+query GetSearchResults(
+  $searchType: Int
+  $num: String
+  $crossNumber: String
+  $storeCode: String
+  $manufacturer: ID
+  $name: String
+  $ean: String
+  $group: ID
+  $currencyName: String
+) {
+  advancedSearch(
+    searchType: $searchType
+    num: $num
+    crossNumber: $crossNumber
+    storeCode: $storeCode
+    manufacturer: $manufacturer
+    name: $name
+    ean: $ean
+    group: $group
+  ) {
+    id
+    name
+    number
+    manufacturer {
+      id
+      name
+    }
+    price {
+      id
+      priceUser(currencyName: $currencyName)
+      onstore
+    }
+  }
+}

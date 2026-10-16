@@ -1,0 +1,8 @@
+mutation Register($registerData: RegisterMutationInput!) {
+  registerUser(input: $registerData) {
+    errors {
+      field
+      messages
+    }
+  }
+}

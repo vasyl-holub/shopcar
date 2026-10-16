@@ -1,0 +1,20 @@
+query GetHistoryProductNode($id: ID!) {
+  historyProductNode(id: $id) {
+    id
+    user {
+      id
+      email
+    }
+    product {
+      id
+      name
+      num
+      type
+      manufacturer {
+        id
+        name
+      }
+    }
+    created
+  }
+}

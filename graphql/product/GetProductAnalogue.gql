@@ -1,0 +1,58 @@
+﻿query GetProductAnalogue(
+  $id: ID!
+  $crosses: Boolean!
+  $perPage: Int
+  $page: Int
+  $isAvailable: Boolean!
+  $currencyName: String!
+  $onePricePerProduct: Boolean!
+) {
+  productAll(
+    id: $id
+    crosses: $crosses
+    perPage: $perPage
+    page: $page
+    isAvailable: $isAvailable
+    onePricePerProduct: $onePricePerProduct
+  ) {
+    edges {
+      id
+      name
+      number
+      images(size: "300x300")
+      manufacturer {
+        id
+        name
+      }
+      price {
+        id
+        count
+        priceUser(currencyName: $currencyName)
+        priceOut(currencyName: $currencyName)
+        priceIn(currencyName: $currencyName)
+        itemDays
+        storeDays
+        isProductDiscount
+        store {
+          id
+          number
+          name
+          description
+          priority
+          workUpTo
+          deliveryDays
+          address
+          email
+          phone
+          url
+          updated
+          iconTitle
+          iconUrl
+          isLocalStore
+          publicNote
+        }
+        onstore
+      }
+    }
+  }
+}

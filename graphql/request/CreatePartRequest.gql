@@ -1,0 +1,25 @@
+mutation CreatePartRequest($input: CreateRequestInput!) {
+  makePartRequest(input: $input) {
+    vinRequest {
+      id
+      phone
+      email
+      brand
+      model
+      modification
+      year
+      vin
+      litres
+      body
+      transmission
+      drive
+      description
+      isReady
+      created
+    }
+    errors {
+      field
+      messages
+    }
+  }
+}

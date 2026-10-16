@@ -1,0 +1,17 @@
+﻿fragment ShareFields on ActionNode {
+  id
+  slug
+  name
+  createdOn: created
+  imageUrl: image(size: "900x512")
+  actFrom
+  actTo
+  isActive
+}
+
+query GetShareDetails($slug: String) {
+  action(slug: $slug) {
+    ...ShareFields
+    text
+  }
+}

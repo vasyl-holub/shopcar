@@ -1,0 +1,8 @@
+﻿mutation UpdateCurrentUser($data: UpdateUserInput!){
+  updateUser(input: $data){
+    errors {
+      field
+      messages
+    }
+  }
+}

@@ -1,0 +1,11 @@
+query GetCityNode($id: ID!) {
+  cityNode(id: $id) {
+    id
+    description
+    descriptionRu
+    ref
+    area
+    cityId
+    isActive
+  }
+}

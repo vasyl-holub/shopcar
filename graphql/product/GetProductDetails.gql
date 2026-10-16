@@ -1,0 +1,83 @@
+﻿query GetProductDetails($id: ID!, $currencyName: String!) {
+  product(id: $id) {
+    id
+    number
+    name
+    images: images(size: "600x600")
+    group {
+      id
+      name
+      breadCrumbs {
+        id
+        slug
+        name
+      }
+    }
+    manufacturer {
+      id
+      oe
+      name
+      slug
+      isActive
+      isBrand
+    }
+    prices {
+      edges {
+        id
+        count
+        priceUser(currencyName: $currencyName)
+        priceOut(currencyName: $currencyName)
+        priceIn(currencyName: $currencyName)
+        itemDays
+        storeDays
+        isProductDiscount
+        onstore
+        store {
+          id
+          number
+          name
+          description
+          priority
+          workUpTo
+          deliveryDays
+          address
+          email
+          phone
+          url
+          updated
+          # canBuy
+          # flagIconUrl
+          iconTitle
+          iconUrl
+          # image
+          isLocalStore
+          publicNote
+        }
+        discountPrices(currencyName: $currencyName) {
+          discountName
+          price
+        }
+      }
+    }
+    properties {
+      edges {
+        id
+        attribute {
+          id
+          name
+        }
+        value
+        multipleValue
+      }
+    }
+    specs {
+      edges {
+        id
+        value
+        spec {
+          name
+        }
+      }
+    }
+  }
+}

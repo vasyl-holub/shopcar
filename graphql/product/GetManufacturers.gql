@@ -1,0 +1,18 @@
+﻿query GetManufacturers($page: Int, $perPage: Int, $id: ID, $search: String, $isCatalog: Boolean) {
+  manufacturerAll(
+    page: $page
+    perPage: $perPage
+    id: $id
+    name_Istartswith: $search
+    isCatalog: $isCatalog
+  ) {
+    edges {
+      id
+      oe
+      name
+      slug
+      isActive
+     isBrand
+    }
+  }
+}

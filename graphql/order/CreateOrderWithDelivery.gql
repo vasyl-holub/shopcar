@@ -1,0 +1,36 @@
+﻿mutation CreateOrderWithDelivery(
+  $order: AddOrderMutationInput!
+  $delivery: DeliveryDataInput
+) {
+  createOrderWithDelivery(
+    order: $order
+    delivery: $delivery
+  ) {
+    orderErrors { field messages }
+    deliveryErrors { field messages }
+    order { id number }
+  }
+}
+
+
+{
+  "order": {
+    "payMethod": "UGF5TWV0aG9kTm9kZTox",
+    "delivery": "RGVsaXZlcnlOb2RlOjI=",
+    "city": "Луцьк",
+    "address": "Волі 13",
+    "recipient": "Павленко Сергій Павлович",
+    "phone": "+380673313253",
+    "deliveryInfo": "2",
+    "dontCall": true
+  },
+  "delivery": {
+    "deliveryRegion": "UmVnaW9uTm9kZToz",
+    "deliveryCity": "Луцьк",
+    "serviceTypes": "1",
+    "deliveryNumber": 13,
+    "deliveryAddress": "Волі 13",
+    "captcha": "124124125",
+    "remember": true
+  }
+}

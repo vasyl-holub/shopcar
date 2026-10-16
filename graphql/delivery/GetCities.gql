@@ -1,0 +1,15 @@
+query GetCities($id: Int, $area: String) {
+  cityAll(id: $id, area: $area) {
+    edges {
+      node {
+        id
+        description
+        descriptionRu
+        ref
+        area
+        cityId
+        isActive
+      }
+    }
+  }
+}

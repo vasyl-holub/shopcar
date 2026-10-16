@@ -1,0 +1,7 @@
+query GetAgreement {
+  textBox(code: "ORDER_AGREEMENT") {
+    id
+    name
+    text
+  }
+}

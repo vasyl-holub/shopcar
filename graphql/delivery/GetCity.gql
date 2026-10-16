@@ -1,0 +1,11 @@
+query GetCity($id: Int!) {
+  city(id: $id) {
+    id
+    description
+    descriptionRu
+    ref
+    area
+    cityId
+    isActive
+  }
+}

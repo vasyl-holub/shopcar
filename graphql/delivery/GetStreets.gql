@@ -1,0 +1,16 @@
+query GetStreets($id: Int, $cityRef: String) {
+  streetAll(id: $id, cityRef: $cityRef) {
+    edges {
+      node {
+        id
+        description
+        ref
+        cityRef
+        streetsTypeRef
+        streetsType
+        isActive
+        modified
+      }
+    }
+  }
+}

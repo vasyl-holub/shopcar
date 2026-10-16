@@ -1,0 +1,23 @@
+query GetVinRequests($id: Int) {
+  vinRequestAll(id: $id) {
+    edges {
+      node {
+        id
+        phone
+        email
+        brand
+        model
+        modification
+        year
+        vin
+        litres
+        body
+        transmission
+        drive
+        description
+        isReady
+        created
+      }
+    }
+  }
+}

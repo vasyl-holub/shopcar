@@ -1,0 +1,18 @@
+query GetHistoryCarNode($id: ID!) {
+  historyCarNode(id: $id) {
+    id
+    car {
+      id
+      name
+      manufacturer {
+        id
+        name
+      }
+    }
+    user {
+      id
+      email
+    }
+    created
+  }
+}

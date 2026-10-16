@@ -1,0 +1,8 @@
+mutation SendFeedback($data: AddFeedbackMutationInput!) {
+  addFeedback(input: $data) {
+    errors {
+      field
+      messages
+    }
+  }
+}

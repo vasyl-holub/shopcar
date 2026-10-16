@@ -1,0 +1,8 @@
+﻿mutation AddCarToHistory($carId: ID!) {
+  addHistoryCar(car: $carId) {
+    errors {
+      field
+      messages
+    }
+  }
+}

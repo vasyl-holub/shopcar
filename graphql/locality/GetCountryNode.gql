@@ -1,0 +1,12 @@
+query GetCountryNode($id: ID!) {
+  country(id: $id) {
+    id
+    name
+    code
+    iso2
+    currency
+    phoneMask
+    eu
+    isActive
+  }
+}

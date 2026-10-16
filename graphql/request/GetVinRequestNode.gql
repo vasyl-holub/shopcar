@@ -1,0 +1,19 @@
+query GetVinRequestNode($id: ID!) {
+  vinRequestNode(id: $id) {
+    id
+    phone
+    email
+    brand
+    model
+    modification
+    year
+    vin
+    litres
+    body
+    transmission
+    drive
+    description
+    isReady
+    created
+  }
+}

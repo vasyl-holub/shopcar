@@ -1,0 +1,24 @@
+query GetKits($id: Int, $priceId: ID!, $currencyName: String) {
+  kitAll(id: $id) {
+    edges {
+      node {
+        id
+        type
+        priceData(priceId: $priceId, currencyName: $currencyName) {
+          mainProductPrice
+          selectedProductPrice
+          oldTotal
+          newTotal
+        }
+        products {
+          edges {
+            node {
+              id
+              name
+            }
+          }
+        }
+      }
+    }
+  }
+}

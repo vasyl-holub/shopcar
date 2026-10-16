@@ -1,0 +1,7 @@
+﻿query GetTextBox($code: String!) {
+  textBox(code: $code) {
+    id
+    name
+    text
+  }
+}

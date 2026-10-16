@@ -1,0 +1,8 @@
+﻿mutation AddProductToHistory($productId: String!) {
+  addHistoryProduct(product: $productId) {
+    errors {
+      field
+      messages
+    }
+  }
+}

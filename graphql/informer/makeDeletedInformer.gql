@@ -1,0 +1,8 @@
+﻿mutation MarkAsDeleted($ids: [ID]!) {
+  makeDeletedInformer(ids: $ids) {
+    errors {
+      field
+      messages
+    }
+  }
+}

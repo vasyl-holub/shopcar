@@ -1,0 +1,19 @@
+﻿mutation UpdateUserCurrency($currencyId: String) {
+updateUser(input: {
+  currency: $currencyId
+}){
+    user {
+      currency {
+       id
+       name
+       symbol
+       userValue
+       leftSide
+     }
+   }
+    errors {
+      field
+      messages
+    }
+  }
+}

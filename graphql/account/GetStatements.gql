@@ -1,0 +1,15 @@
+﻿query GetStatements($date: DateRangeFieldInput!, $currencyName: String!) {
+  accountAll(between: $date) {
+    edges {
+      id
+      type
+      date
+      sourceValue(currencyName: $currencyName)
+      number
+      orders
+      balance(currencyName: $currencyName)
+      printUrl(currencyName: $currencyName)
+      csvUrl
+    }
+  }
+}

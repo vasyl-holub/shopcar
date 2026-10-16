@@ -1,0 +1,66 @@
+﻿fragment OrderItemFields on OrderItemNode {
+  id
+  status
+  modifiedOn: modified
+  arrivalOn: arrival
+  count
+  price(currencyName: $currencyName)
+  total(currencyName: $currencyName)
+  deliveryDays
+  canBeReturned
+}
+
+
+fragment ProductFields on ProductNode {
+  id
+  number
+  name
+  manufacturer {
+    id
+    name
+  }
+}
+
+query GetOrderItems(
+  $page: Int
+  $perPage: Int
+  $sort: String
+  $currencyName: String!
+  $orderNumber: Decimal
+  $statuses: [String]
+  $partNumber: String
+  $partName: String
+  $manufacturerId: ID
+  $createdDateRange: DateRangeFieldInput
+  $arrivalDateRange: DateRangeFieldInput
+  $priceRange: NumericRangeFieldInput
+) {
+  orderItemAll(
+    page: $page
+    perPage: $perPage
+    sort: $sort
+    statuses: $statuses
+    order_Number: $orderNumber
+    product_Num: $partNumber
+    product_Name: $partName
+    product_Manufacturer: $manufacturerId
+    madeBetween: $createdDateRange
+    arrival: $arrivalDateRange
+    total: $priceRange
+  ) {
+    totalCount
+    edges {
+      ...OrderItemFields
+      product {
+        ...ProductFields
+      }
+      order {
+        id
+        number
+        createdOn: created
+        isPaid
+        printUrl
+      }
+    }
+  }
+}

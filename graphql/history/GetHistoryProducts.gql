@@ -1,0 +1,34 @@
+query GetHistoryProducts(
+  $id: Int
+  $productManufacturer: Int
+  $productType: Int
+  $created: DateTime
+  $sort: String
+) {
+  historyProductAll(
+    id: $id
+    product_Manufacturer: $productManufacturer
+    product_Type: $productType
+    created: $created
+    orderBy: $sort
+  ) {
+    edges {
+      node {
+        id
+        product {
+          id
+          name
+          manufacturer {
+            id
+            name
+          }
+        }
+        user {
+          id
+          email
+        }
+        created
+      }
+    }
+  }
+}

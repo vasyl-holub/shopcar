@@ -1,0 +1,7 @@
+query GetReport($date: DateRangeFieldInput!, $currencyName: String!) {
+  orderAll(createdDateRange: $date) {
+    totalSum(currencyName: $currencyName)
+    completedCount
+    canceledCount
+  }
+}

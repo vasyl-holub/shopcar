@@ -1,0 +1,15 @@
+﻿fragment BrandFields on BrandNode {
+  id
+  slug
+  name
+  image(size: "300x300")
+  carsCount
+}
+
+query GetBrands {
+  brandAll {
+    edges {
+      ...BrandFields
+    }
+  }
+}

@@ -1,0 +1,13 @@
+﻿fragment BrandFields on BrandNode {
+  id
+  slug
+  name
+  image(size: "300x300")
+  carsCount
+}
+
+query GetBrand($id: ID, $slug: String) {
+  brand(id: $id, slug: $slug) {
+    ...BrandFields
+  }
+}

@@ -1,0 +1,16 @@
+query GetWarehouseNode($id: ID!) {
+  warehouseNode(id: $id) {
+    id
+    description
+    descriptionRu
+    phone
+    typeOfWarehouse
+    ref
+    number
+    cityRef
+    cityDescription
+    latitude
+    longitude
+    isActive
+  }
+}

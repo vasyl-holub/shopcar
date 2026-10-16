@@ -1,0 +1,90 @@
+import { gql, gqlRaw } from "@/lib/api/graphql";
+import { getApiAuth } from "@/lib/api/session";
+
+export type Informer = {
+  id: string;
+  subject: string;
+  text: string;
+  isRead: boolean;
+  created: string;
+  sender: string;
+};
+
+const INFORMERS = /* GraphQL */ `
+  query Informers {
+    informerAll(showAll: true, perPage: 100) {
+      edges {
+        id
+        subject
+        text
+        isRead
+        isDeleted
+        created
+        sender {
+          email
+        }
+      }
+    }
+  }
+`;
+
+/** Повідомлення кабінету (системні листи про замовлення, оплати тощо) */
+export async function getInformers(): Promise<Informer[]> {
+  const auth = await getApiAuth();
+  if (!auth) return [];
+  try {
+    const data = await gql<{
+      informerAll: {
+        edges: {
+          id: string;
+          subject: string | null;
+          text: string | null;
+          isRead: boolean | null;
+          isDeleted: boolean | null;
+          created: string | null;
+          sender: { email: string | null } | null;
+        }[];
+      } | null;
+    }>(INFORMERS, { auth });
+    return (data.informerAll?.edges ?? [])
+      .filter((e) => !e.isDeleted)
+      .map((e) => ({
+        id: e.id,
+        subject: e.subject ?? "",
+        text: e.text ?? "",
+        isRead: Boolean(e.isRead),
+        created: e.created ?? "",
+        sender: e.sender?.email ?? "",
+      }));
+  } catch {
+    return [];
+  }
+}
+
+export async function markInformersRead(ids: string[]) {
+  const auth = await getApiAuth();
+  return gqlRaw<{ makeReadInformer: { errors: string[] } }>(
+    /* GraphQL */ `
+      mutation ReadInformers($ids: [ID]!) {
+        makeReadInformer(ids: $ids) {
+          errors
+        }
+      }
+    `,
+    { auth, variables: { ids } },
+  );
+}
+
+export async function deleteInformers(ids: string[]) {
+  const auth = await getApiAuth();
+  return gqlRaw<{ makeDeletedInformer: { errors: string[] } }>(
+    /* GraphQL */ `
+      mutation DeleteInformers($ids: [ID]!) {
+        makeDeletedInformer(ids: $ids) {
+          errors
+        }
+      }
+    `,
+    { auth, variables: { ids } },
+  );
+}

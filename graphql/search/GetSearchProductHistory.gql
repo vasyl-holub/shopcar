@@ -1,0 +1,22 @@
+﻿  fragment ProductFields on SimpleProductNode {
+    id
+    name
+    number
+    manufacturer {
+      id
+      name
+    }
+    images(size: "300x300")
+  }
+
+  query GetSearchProductHistory($sort: String, $page: Int, $limit: Int) {
+    historyProductAll(sort: $sort, page: $page, limit: $limit) {
+      edges {
+        id
+        created
+        product {
+          ...ProductFields
+        }
+      }
+    }
+  }

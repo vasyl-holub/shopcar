@@ -1,0 +1,70 @@
+fragment SearchProductFields on ProductNode {
+  id
+  number
+  name
+  manufacturer {
+    id
+    name
+  }
+}
+
+fragment SearchPriceFields on StoreItemNode {
+  id
+  count
+  priceUser(currencyName: $currencyName)
+  priceOut(currencyName: $currencyName)
+  isAvailable
+  clientDeliveryDays: itemDays
+  storeDeliveryDays: storeDays
+  store {
+    id
+    name
+    isLocalStore
+    priority
+  }
+}
+
+# Пошук товарів по рядку запиту.
+#
+# Параметр q підтримує такі формати:
+#   1. Internal EAN (штрих-код виду P<PREFIX><id>)  → пошук по pk
+#      Приклад: q: "P00000123"
+#
+#   2. EAN-штрих-код                                → пошук по ProductEAN.ean
+#      Приклад: q: "4047024312345"
+#
+#   3. "ВИРОБНИК:НОМЕР" (розділювач ":")            → виробник + артикул
+#      Приклад: q: "BOSCH:0450906374"
+#
+#   4. "ВИРОБНИК НОМЕР" (1 пробіл)                  → якщо перше слово є виробником,
+#      шукаємо по виробнику + артикулу, інакше → п.5
+#      Приклад: q: "BOSCH 0450906374"
+#
+#   5. "ВИРОБНИК З КІЛЬКОХ СЛІВ НОМЕР" (кілька пробілів)
+#      → останнє слово = номер, решта = виробник
+#      Приклад: q: "BOSCH GARDEN TOOLS 0450906374"
+#
+#   6. Просто артикул                               → num__startswith
+#      Приклад: q: "0450906374"
+#
+# Параметр price: true — підтягує найкращу ціну для кожного товару (поле price).
+# Без price або price: false — поле price також доступне, але обчислюється lazy.
+
+query SearchProducts(
+  $q: String!
+  $limit: Int
+  $price: Boolean
+  $currencyName: String!
+) {
+  productSearch(
+    q: $q
+    limit: $limit
+    price: $price
+  ) {
+    ...SearchProductFields
+    images: images(size: "300x300")
+    price {
+      ...SearchPriceFields
+    }
+  }
+}

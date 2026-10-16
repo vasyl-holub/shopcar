@@ -1,0 +1,50 @@
+﻿fragment CartItemFields on CartItemNode {
+  id
+  count
+  total(currencyName: $currencyName)
+  price(currencyName: $currencyName)
+  # "priceItem" is used to check count between available in local store and count in cart item
+  # to show aler message on checkout page
+  priceItem {
+    id
+    count
+  }
+  product {
+    id
+    number
+    name
+    images(size: "300x300")
+    manufacturer {
+      id
+      name
+    }
+  }
+  cart {
+    id
+  }
+  store {
+    id
+    name
+    iconUrl
+    iconTitle
+    publicNote
+    priority
+    workUpTo
+    deliveryDays
+    address
+    email
+    phone
+    url
+    updated
+    isLocalStore
+  }
+  isActive
+}
+
+query GetCartItems($currencyName: String!) {
+  cartItemAll {
+    edges {
+      ...CartItemFields
+    }
+  }
+}

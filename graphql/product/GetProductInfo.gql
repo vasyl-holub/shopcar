@@ -1,0 +1,26 @@
+﻿query GetProductInfo($id: ID!) {
+  product(id: $id) {
+    id
+    name
+    images(size: "300x300")
+    properties {
+      edges {
+        id
+        value
+        attribute {
+          name
+        }
+        multipleValue
+      }
+    }
+    specs {
+      edges {
+        id
+        value
+        spec {
+          name
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,9 @@
+query GetDelivery($id: Int!) {
+  delivery(id: $id) {
+    id
+    name
+    isActive
+    isShow
+    hasPlugin
+  }
+}

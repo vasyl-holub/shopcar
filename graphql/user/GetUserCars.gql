@@ -1,0 +1,21 @@
+﻿query GetUserCars {
+  userCarAll {
+    edges {
+      id
+      type
+      brand
+      model
+      year
+      body
+      transmission
+      drive
+      litres
+      vin
+
+      typeDisplay
+      bodyDisplay
+      driveDisplay
+      transmissionDisplay
+    }
+  }
+}

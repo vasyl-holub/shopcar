@@ -1,0 +1,9 @@
+query GetDeliveryNode($id: ID!) {
+  deliveryNoded(id: $id) {
+    id
+    name
+    isActive
+    isShow
+    hasPlugin
+  }
+}

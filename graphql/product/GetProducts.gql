@@ -1,0 +1,75 @@
+﻿fragment ProductFields on ProductNode {
+  id
+  number
+  name
+  manufacturer {
+    id
+    name
+  }
+}
+
+
+fragment PriceFields on StoreItemNode {
+  id
+  count
+  priceUser(currencyName: $currencyName)
+  priceOut(currencyName: $currencyName)
+  priceIn(currencyName: $currencyName)
+  isProductDiscount
+  clientDeliveryDays: itemDays # Days to deliver item to client
+  storeDeliveryDays: storeDays # Days to deliver item to store
+}
+
+
+fragment StoreFields on StoreNode {
+  id
+  number
+  name
+  description
+  priority
+  workUpTo
+  deliveryDays
+  updatedOn: updated
+  address
+  email
+  phone
+  url
+  iconTitle
+  iconUrl
+  isLocalStore
+  publicNote
+  warningNote: warning
+}
+
+query GetProducts(
+  $perPage: Int
+  $page: Int
+  $sort: String
+  $categoryId: String
+  $manufacturers: [String]
+  $attributes: GenericScalar
+  $currencyName: String!
+) {
+  productAll(
+    perPage: $perPage
+    page: $page
+    sort: $sort
+    group: $categoryId
+    manufacturers: $manufacturers
+    attributes: $attributes
+  ) {
+    edges {
+      ...ProductFields
+      images: images(size: "300x300")
+      price {
+        ...PriceFields
+        # itemDays
+        # storeDays
+        store {
+          ...StoreFields
+        }
+      }
+    }
+    totalCount
+  }
+}

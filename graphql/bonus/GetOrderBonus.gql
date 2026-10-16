@@ -1,0 +1,17 @@
+query {
+  orderBonus(id: "T3JkZXJCb251c05vZGU6MTIz") {
+    id
+    order {
+      id
+      number
+    }
+    bonusValue
+    value
+    availableAt
+    isProcessed
+    account {
+      id
+    }
+    created
+  }
+}

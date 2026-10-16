@@ -1,0 +1,8 @@
+﻿mutation RemoveProductFromFavourites($productId: ID!) {
+  deleteProductLike(product: $productId) {
+    errors {
+      field
+      messages
+    }
+  }
+}

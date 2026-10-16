@@ -1,0 +1,21 @@
+query GetWarehouses($id: Int, $cityRef: String) {
+  warehouseAll(id: $id, cityRef: $cityRef) {
+    edges {
+      node {
+        id
+        cityId
+        description
+        descriptionRu
+        phone
+        typeOfWarehouse
+        ref
+        number
+        cityRef
+        cityDescription
+        latitude
+        longitude
+        isActive
+      }
+    }
+  }
+}

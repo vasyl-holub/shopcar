@@ -1,0 +1,34 @@
+﻿query GetPaymentNotifications($date: DateRangeFieldInput) {
+  paymentNotifyAll(createdDateRange: $date) {
+    edges {
+      id
+      type
+      user {
+        id
+        username
+      }
+      created
+      date
+      value
+      currency {
+        id
+        name
+      }
+      orders {
+        edges {
+          id
+          number
+        }
+      }
+      comment
+      manager {
+        id
+        username
+      }
+      ref
+      response
+      isReady
+      number
+    }
+  }
+}

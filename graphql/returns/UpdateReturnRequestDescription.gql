@@ -1,0 +1,8 @@
+mutation UpdateReturnRequestDescription($data: ChangeReturnDescriptionInput!) {
+  changeReturnsDescription(input: $data) {
+    errors {
+      messages
+      field
+    }
+  }
+}

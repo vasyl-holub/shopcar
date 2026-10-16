@@ -1,0 +1,8 @@
+mutation CreateSearchRequest($data: CreateRequestMutationInput!) {
+  makePartRequest(input: $data) {
+    errors {
+      field
+      messages
+    }
+  }
+}

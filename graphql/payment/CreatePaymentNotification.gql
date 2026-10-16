@@ -1,0 +1,8 @@
+﻿mutation CreatePaymentNotification($data: NotifyAboutPaymentMutationInput!) {
+  notifyAboutPayment(input: $data) {
+    errors {
+      field
+      messages
+    }
+  }
+}

@@ -1,0 +1,26 @@
+query {
+  returnsAll(
+    reaction: 1                    # APPROVED
+    reason_In: [4, 5]              # DEFECTIVE_PART або NOT_SUITABLE
+    description_Icontains: "брак"
+    orderNumber: 456
+    createdDateRange_After: "2024-01-01"
+    createdDateRange_Before: "2024-12-31"
+  ) {
+    id
+    reason
+    reaction
+    description
+    dispatchInfo
+    dispatch
+    created
+    count
+    orderItem {
+      id
+      product {
+        id
+        shortName
+      }
+    }
+  }
+}

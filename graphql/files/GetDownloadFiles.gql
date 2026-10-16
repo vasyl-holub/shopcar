@@ -1,0 +1,13 @@
+﻿query GetDownloadFiles {
+  uploadFileAll {
+    edges {
+      id
+      name
+      created
+      modified
+      file
+      url
+      slug
+    }
+  }
+}

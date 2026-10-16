@@ -1,0 +1,14 @@
+query GetAreas {
+  areaAll {
+    edges {
+      node {
+        id
+        description
+        ref
+        areasCenter
+        isActive
+        modified
+      }
+    }
+  }
+}

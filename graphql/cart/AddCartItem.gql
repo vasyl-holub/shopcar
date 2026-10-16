@@ -1,0 +1,8 @@
+﻿mutation AddCartItem($priceId: ID!, $count: Int!) {
+  addCartItem(itemId: $priceId, count: $count) {
+    errors {
+      field
+      messages
+    }
+  }
+}

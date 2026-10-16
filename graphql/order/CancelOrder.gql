@@ -1,0 +1,8 @@
+﻿mutation CancelOrder($orderId: String!) {
+  cancelOrder(order: $orderId) {
+    errors {
+      messages
+      field
+    }
+  }
+}

@@ -1,0 +1,17 @@
+﻿query GetPage($slug: String!) {
+  sitePage(slug: $slug) {
+    id
+    slug
+    name
+    description
+    text
+    isActive
+    children {
+      id
+      slug
+      name
+      imageSrc: image
+      isActive
+    }
+  }
+}

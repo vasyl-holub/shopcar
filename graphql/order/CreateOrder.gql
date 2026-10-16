@@ -1,0 +1,16 @@
+﻿fragment ErrorFields on ErrorType {
+  field
+  messages
+}
+
+mutation CreateOrder($data: AddOrderMutationInput!) {
+  addOrder(input: $data) {
+    order {
+      id
+      number
+    }
+    errors {
+      ...ErrorFields
+    }
+  }
+}

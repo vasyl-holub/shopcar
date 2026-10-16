@@ -1,0 +1,15 @@
+query GetManufacturer($slug: String!) {
+  manufacturer(slug: $slug) {
+    id
+    oe
+    name
+    slug
+    isActive
+    isBrand
+    groups: unions {
+      id
+      name
+      pk
+    }
+  }
+}

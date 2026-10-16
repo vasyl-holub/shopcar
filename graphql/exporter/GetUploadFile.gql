@@ -1,0 +1,10 @@
+query {
+  uploadFile(id: 1) {
+    name
+    file
+    url
+    slug
+    created
+    modified
+  }
+}

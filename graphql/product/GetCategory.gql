@@ -1,0 +1,23 @@
+﻿fragment CategoryFields on ProductGroupNode {
+  id
+  slug
+  name
+  image(size: "300x300")
+  breadCrumbs {
+    id
+    slug
+    name
+  }
+  isActive
+}
+
+query GetCategory($slug: String!) {
+  productGroup(slug: $slug) {
+    ...CategoryFields
+    children {
+      edges {
+        ...CategoryFields
+      }
+    }
+  }
+}

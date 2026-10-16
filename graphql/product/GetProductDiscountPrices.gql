@@ -1,0 +1,8 @@
+﻿query GetProductDiscountPrices($priceId: ID!, $currencyName: String!) {
+  storeItem(id: $priceId) {
+    discountPrices(currencyName: $currencyName) {
+      discountName
+      price
+    }
+  }
+}

@@ -1,0 +1,8 @@
+﻿mutation MarkAsRead($ids: [ID]!) {
+  makeReadInformer(ids: $ids) {
+    errors {
+      field
+      messages
+    }
+  }
+}

@@ -1,0 +1,50 @@
+﻿query GetCarCategoryParts($categoryId: ID, $carId: ID, $currencyName: String) {
+  categoryProductAll(category: $categoryId, car: $carId) {
+    edges {
+      id
+      name
+      number
+      manufacturer {
+        id
+        oe
+        name
+        slug
+        isActive
+        isBrand
+      }
+      prices {
+        edges {
+          id
+          count
+          priceUser(currencyName: $currencyName)
+          priceOut(currencyName: $currencyName)
+          priceIn(currencyName: $currencyName)
+          itemDays
+          storeDays
+          isProductDiscount
+          store {
+            id
+            number
+            name
+            description
+            priority
+            workUpTo
+            deliveryDays
+            address
+            email
+            phone
+            url
+            updated
+            # canBuy
+            # flagIconUrl
+            iconTitle
+            iconUrl
+            # image
+            isLocalStore
+            publicNote
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,64 @@
+﻿fragment EngineFields on EngineNode {
+  id
+  name
+  slug
+  yearStart
+  yearEnd
+  kwFrom
+  kwTo
+  hpFrom
+  hpTo
+  valves
+  cylinders
+  ccm
+  fuel
+  litres
+  # kvRpmFrom
+  # kvRpmTo
+  # torqueFrom
+  # torqueTo
+}
+
+
+fragment ModelFields on CarModelNode {
+  id
+  slug
+  name
+  yearStart
+  yearEnd
+  body {
+    id
+    name
+  }
+  brand {
+    id
+    name
+  }
+}
+
+query GetCars($brandId: ID!, $modelId: ID!) {
+  carAll(model_Brand: $brandId, model: $modelId) {
+    edges {
+      id
+      slug
+      name
+      model {
+        ...ModelFields
+      }
+      engines {
+        edges {
+          ...EngineFields
+        }
+      }
+      yearStart
+      yearEnd
+      ccm
+      cylinders
+      litres
+      hpTo
+      hpFrom
+      kwTo
+      kwFrom
+    }
+  }
+}

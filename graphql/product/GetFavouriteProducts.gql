@@ -1,0 +1,56 @@
+query GetFavouriteProducts($currencyName: String!) {
+  productLikeAll {
+    edges {
+      id
+      product {
+        id
+        number
+        name
+        images
+        manufacturer {
+          id
+          name
+        }
+        prices {
+          edges {
+            id
+            count
+            priceUser(currencyName: $currencyName)
+            priceOut(currencyName: $currencyName)
+            priceIn(currencyName: $currencyName)
+            itemDays
+            storeDays
+            isProductDiscount
+            onstore
+            store {
+              id
+              number
+              name
+              description
+              priority
+              workUpTo
+              deliveryDays
+              address
+              email
+              phone
+              url
+              updated
+              # canBuy
+              # flagIconUrl
+              iconTitle
+              iconUrl
+              # image
+              isLocalStore
+              publicNote
+            }
+            discountPrices(currencyName: $currencyName) {
+              discountName
+              price
+            }
+          }
+        }
+      }
+      createdOn: modified
+    }
+  }
+}

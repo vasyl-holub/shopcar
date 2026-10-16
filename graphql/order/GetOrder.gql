@@ -1,0 +1,89 @@
+﻿fragment OrderFields on OrderNode {
+  id
+  number
+  createdOn: created
+  shippedOn: shipped
+  status
+  isPaid
+  total(currencyName: $currencyName)
+  delivery {
+    id
+    name
+  }
+  city
+  deliveryInfo
+  deliveryDeclaration
+  recipient
+  printUrl(currencyName: $currencyName)
+  canBeCancelled
+}
+
+
+fragment OrderCommentFields on OrderCommentNode {
+  id
+  type
+  createdOn: created
+  text
+  manager {
+    id
+    firstName
+    lastName
+  }
+  isRead
+}
+
+
+fragment OrderItemFields on OrderItemNode {
+  id
+  status
+  modifiedOn: modified
+  arrivalOn: arrival
+  count
+  price(currencyName: $currencyName)
+  total(currencyName: $currencyName)
+  deliveryDays
+  canBeReturned
+}
+
+
+fragment ProductFields on ProductNode {
+  id
+  number
+  name
+  manufacturer {
+    id
+    name
+  }
+}
+
+query GetOrder($id: ID, $number: Decimal, $currencyName: String!) {
+  order(id: $id, number: $number) {
+    ...OrderFields
+    comments {
+      edges {
+        ...OrderCommentFields
+      }
+    }
+    items {
+      edges {
+        ...OrderItemFields
+        product {
+          ...ProductFields
+          price {
+            store {
+              returnDays
+            }
+          }
+        }
+      }
+    }
+    payMethod {
+      id
+      name
+      details
+      provider
+    }
+    phone
+    needInvoice
+  }
+}

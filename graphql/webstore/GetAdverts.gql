@@ -1,0 +1,10 @@
+﻿query GetAdverts {
+  advertAll {
+    edges {
+      id
+      name
+      url
+      image(size: "360x60")
+    }
+  }
+}

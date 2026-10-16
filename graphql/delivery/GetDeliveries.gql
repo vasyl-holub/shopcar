@@ -1,0 +1,13 @@
+query GetDeliveries {
+  deliveryAll {
+    edges {
+      node {
+        id
+        name
+        isActive
+        isShow
+        hasPlugin
+      }
+    }
+  }
+}

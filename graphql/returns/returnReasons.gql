@@ -1,0 +1,14 @@
+query {
+  returnReasons
+}
+
+{
+  "data": {
+    "returnReasons": [
+      {"value": 4, "label": "Бракованная деталь"},
+      {"value": 5, "label": "Не подходит"},
+      {"value": 1, "label": "Отказ без причины"},
+      {"value": 10, "label": "Другая"}
+    ]
+  }
+}

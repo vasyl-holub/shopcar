@@ -1,0 +1,22 @@
+﻿query GetProductCrosses($id: ID!) {
+  product(id: $id) {
+    cross {
+      edges {
+        id
+        number
+        crossProduct {
+          id
+          number
+        }
+        manufacturer {
+          id
+          oe
+          name
+          slug
+          isActive
+          isBrand
+        }
+      }
+    }
+  }
+}

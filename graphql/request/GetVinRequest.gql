@@ -1,0 +1,19 @@
+query GetVinRequest($id: Int!) {
+  vinRequest(id: $id) {
+    id
+    phone
+    email
+    brand
+    model
+    modification
+    year
+    vin
+    litres
+    body
+    transmission
+    drive
+    description
+    isReady
+    created
+  }
+}

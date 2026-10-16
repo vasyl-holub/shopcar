@@ -1,0 +1,78 @@
+﻿query GetCarDetails($slug: String!) {
+  car(slug: $slug) {
+    id
+    name
+    abs
+    asr
+    body {
+      # body type
+      id
+      name
+    }
+    brakeSystem # brake system
+    brakeType # brake type
+    ccm # engine capacity ( CC )
+    ccmTax # engine capacity ( CC ) for tax purposes
+    cylinders # number of cylinders
+    doors # number of doors
+    engine # engine type
+    fuel # fuel type
+    fuelSupply # fuel supply type
+    hpFrom # engine power ( HP )
+    hpTo
+    isActive
+    kvDrive # drive type
+    kwAxle # axis configuration
+    kwFrom # engine power ( KW )
+    kwModel # type of assembly ( 4x2, 4x4, etc. )
+    kwTo
+    litres # engine capacity ( L )
+    maxWeight # maximum load capacity ( kg )
+    slug
+    tank # fuel tank capacity ( L )
+    trans # transmission type
+    valves # number of valves
+    yearEnd
+    yearStart
+    engines {
+      edges {
+        id
+        name
+        slug
+        yearStart
+        yearEnd
+        kwFrom
+        kwTo
+        hpFrom
+        hpTo
+        valves
+        cylinders
+        ccm
+        fuel
+        litres
+        # kvRpmFrom
+        # kvRpmTo
+        # torqueFrom
+        # torqueTo
+      }
+    }
+    model {
+      id
+      slug
+      name
+      yearStart
+      yearEnd
+      body {
+        id
+        name
+      }
+      brand {
+        id
+        slug
+        name
+        image(size: "300x300")
+        carsCount
+      }
+    }
+  }
+}
