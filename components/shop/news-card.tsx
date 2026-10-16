@@ -1,6 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ShopIcon } from "@/components/ui/shop-icon";
+import { isRemoteImage } from "@/lib/images";
+import { mediaUrl } from "@/lib/api/graphql";
 import {
   articleImageUrl,
   formatDotDate,
@@ -18,7 +20,7 @@ function plain(html: string | null) {
 
 export function NewsCard({ item }: { item: ArticleListItem }) {
   const href = `/blog/${item.slug}`;
-  const image = articleImageUrl(item.image);
+  const image = mediaUrl(articleImageUrl(item.image));
   const text = plain(item.textShort);
 
   return (
@@ -32,6 +34,7 @@ export function NewsCard({ item }: { item: ArticleListItem }) {
               fill
               sizes="220px"
               className="object-cover"
+              unoptimized={isRemoteImage(image)}
             />
           )}
         </div>

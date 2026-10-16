@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Image from "next/image";
+import { isRemoteImage } from "@/lib/images";
 import Link from "next/link";
 import { ImageOff } from "lucide-react";
 import { getAllCarBrands } from "@/lib/api/catalog";
@@ -104,6 +105,7 @@ export default async function BrandsPage() {
                       width={40}
                       height={40}
                       className="size-10 object-contain"
+                      unoptimized={isRemoteImage(b.logo)}
                     />
                   ) : (
                     <ImageOff
