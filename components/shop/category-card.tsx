@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { isRemoteImage } from "@/lib/images";
 import { cn } from "@/lib/cn";
 
 /** Плитка категорії: фото на весь блок і темна підпис-смуга внизу */
@@ -33,6 +34,7 @@ export function CategoryCard({
             "transition-transform duration-300 group-hover:scale-105",
             contain ? "object-contain pb-8 lg:pb-10" : "object-cover",
           )}
+          unoptimized={isRemoteImage(image)}
         />
       )}
       <span className="relative w-full bg-black/70 p-1 text-[12px] font-semibold uppercase leading-[1.33] text-white lg:w-fit lg:p-2 lg:text-[16px] lg:leading-[1.5]">
