@@ -154,7 +154,13 @@ async function fillMissingImages(items: CartItem[]) {
   }
 }
 
-export async function getCart(): Promise<Cart> {
+/**
+ * `activeOnly` — лише позиції, які клієнт відмітив для замовлення (на
+ * сторінці кошика показуємо всі, а оформлення бачить тільки відмічені).
+ */
+export async function getCart({
+  activeOnly = false,
+}: { activeOnly?: boolean } = {}): Promise<Cart> {
   const auth = await getApiAuth();
 
   try {
@@ -171,13 +177,17 @@ export async function getCart(): Promise<Cart> {
       variables: { cartId: cart.id },
     });
 
-    const active = data.cartItemAll.edges.filter((i) => i.isActive);
-    const items = await fillMissingImages(active);
+    const items = await fillMissingImages(
+      activeOnly
+        ? data.cartItemAll.edges.filter((i) => i.isActive)
+        : data.cartItemAll.edges,
+    );
+    const chosen = items.filter((i) => i.isActive);
 
     return {
       id: cart.id,
-      total: cart.total ?? items.reduce((s, i) => s + (i.total ?? 0), 0),
-      positions: items.length,
+      total: chosen.reduce((s, i) => s + (i.total ?? 0), 0),
+      positions: chosen.length,
       items,
     };
   } catch (error) {
@@ -224,6 +234,19 @@ const CHANGE_ITEMS = /* GraphQL */ `
 
 export async function setCartItemCount(cartItemId: string, count: number) {
   return mutate(CHANGE_ITEMS, { cartItems: [cartItemId], count });
+}
+
+const SET_ACTIVE = /* GraphQL */ `
+  mutation SetCartItemsActive($cartItems: [ID], $isActive: Boolean) {
+    changeCartItems(cartItems: $cartItems, isActive: $isActive) {
+      __typename
+    }
+  }
+`;
+
+/** Відмічає позиції для замовлення (true) або знімає відмітку (false) */
+export async function setCartItemsActive(ids: string[], isActive: boolean) {
+  return mutate(SET_ACTIVE, { cartItems: ids, isActive });
 }
 
 const DELETE_ITEMS = /* GraphQL */ `

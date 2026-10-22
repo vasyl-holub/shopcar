@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ImageOff } from "lucide-react";
 import { MultiSelect } from "@/components/account/multi-select";
@@ -77,6 +78,25 @@ const outlineBtn =
   "inline-flex cursor-pointer items-center justify-center rounded-[4px] border border-orange px-7 py-[9px] text-[16px] font-semibold uppercase leading-[1.5] text-orange transition-colors hover:bg-peach disabled:cursor-default disabled:opacity-50";
 const solidBtn =
   "inline-flex cursor-pointer items-center justify-center rounded-[4px] bg-orange px-7 py-[9px] text-[16px] font-semibold uppercase leading-[1.5] text-white transition-opacity hover:opacity-90 disabled:cursor-default disabled:opacity-50";
+
+/** Фото й назва позиції ведуть на сторінку товару; без товару в каталозі — просто блок */
+function ItemLink({
+  product,
+  className,
+  children,
+}: {
+  product: OrderDetails["items"][number]["product"];
+  className: string;
+  children: React.ReactNode;
+}) {
+  if (!product?.slug || !product.id)
+    return <div className={className}>{children}</div>;
+  return (
+    <Link href={`/part/${product.slug}/${product.id}`} className={className}>
+      {children}
+    </Link>
+  );
+}
 
 const fieldCls =
   "w-full rounded-[4px] border border-[#bbb] bg-white px-[15px] text-[14px] leading-[1.4] text-[#121212] outline-none focus:border-orange";
@@ -341,7 +361,10 @@ export function OrderExpand({
                             onChange={() => toggleItem(item.id)}
                           />
                         )}
-                        <div className="flex min-w-0 items-start gap-[15px]">
+                        <ItemLink
+                          product={item.product}
+                          className="group flex min-w-0 items-start gap-[15px]"
+                        >
                           <span className="relative size-20 shrink-0 overflow-hidden rounded-[4px] border-[1.455px] border-[#bbb] bg-white">
                             <ProductPhoto
                               sources={item.product?.images ?? []}
@@ -362,7 +385,7 @@ export function OrderExpand({
                             />
                           </span>
                           <div className="flex min-w-0 flex-col gap-2.5 text-black">
-                            <span className="text-[14px] font-semibold leading-[1.4]">
+                            <span className="text-[14px] font-semibold leading-[1.4] transition-colors group-hover:text-orange">
                               {item.product?.name ?? "Позицію видалено"}
                             </span>
                             <span className="text-[12px] leading-4">
@@ -372,7 +395,7 @@ export function OrderExpand({
                               {item.product?.brand}
                             </span>
                           </div>
-                        </div>
+                        </ItemLink>
                       </div>
                       <div className="flex shrink-0 items-center gap-[30px] text-[14px] leading-[1.4]">
                         <Stat label="Ціна">

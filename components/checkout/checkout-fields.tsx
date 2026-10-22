@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { ShopIcon } from "@/components/ui/shop-icon";
 import { cn } from "@/lib/cn";
 
@@ -156,9 +156,16 @@ export function UnderlineSelect({
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const root = useRef<HTMLDivElement>(null);
+  const panel = useRef<HTMLDivElement>(null);
+  const uid = useId();
+  /* Пункт, підсвічений стрілками клавіатури */
+  const [active, setActive] = useState(0);
 
   useEffect(() => {
     if (!open) return;
+    /* Список розкривається вниз; якщо він не вміщається в екран, прокручуємо
+       сторінку, щоб було видно всі пункти */
+    panel.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
     const onDown = (e: MouseEvent) => {
       if (!root.current?.contains(e.target as Node)) setOpen(false);
     };
@@ -179,19 +186,85 @@ export function UnderlineSelect({
     ? options.filter((o) => o.label.toLowerCase().includes(needle))
     : options;
   const shown = searchable ? filtered.slice(0, SEARCH_LIMIT) : filtered;
+  const last = shown.length - 1;
+  const activeIndex = Math.min(active, Math.max(last, 0));
+
+  const openList = () => {
+    setQuery("");
+    setActive(
+      Math.max(
+        0,
+        options.findIndex((o) => o.value === value),
+      ),
+    );
+    setOpen(true);
+  };
+
+  /* Активний пункт завжди має бути видно в прокрутці списку */
+  useEffect(() => {
+    if (!open) return;
+    document
+      .getElementById(`${uid}-${activeIndex}`)
+      ?.scrollIntoView({ block: "nearest" });
+  }, [open, activeIndex, uid]);
+
+  const onKeyDown = (e: React.KeyboardEvent) => {
+    if (disabled) return;
+    if (!open) {
+      if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+        e.preventDefault();
+        openList();
+      }
+      return;
+    }
+    switch (e.key) {
+      case "ArrowDown":
+        e.preventDefault();
+        setActive(Math.min(activeIndex + 1, last));
+        break;
+      case "ArrowUp":
+        e.preventDefault();
+        setActive(Math.max(activeIndex - 1, 0));
+        break;
+      case "Home":
+        if (!searchable) {
+          e.preventDefault();
+          setActive(0);
+        }
+        break;
+      case "End":
+        if (!searchable) {
+          e.preventDefault();
+          setActive(last);
+        }
+        break;
+      case "Enter":
+        /* Enter у полі пошуку не повинен відправляти форму */
+        e.preventDefault();
+        if (shown[activeIndex]) {
+          onChange(shown[activeIndex].value);
+          setOpen(false);
+        }
+        break;
+      case "Tab":
+        setOpen(false);
+        break;
+    }
+  };
 
   return (
-    <div ref={root} className="relative flex flex-col gap-1.5">
+    <div
+      ref={root}
+      onKeyDown={onKeyDown}
+      className="relative flex flex-col gap-1.5"
+    >
       <input type="hidden" name={name} value={value} />
       <button
         type="button"
         disabled={disabled}
         aria-haspopup="listbox"
         aria-expanded={open}
-        onClick={() => {
-          setQuery("");
-          setOpen((v) => !v);
-        }}
+        onClick={() => (open ? setOpen(false) : openList())}
         aria-label={inline || box ? label : undefined}
         className={cn(
           "flex w-full cursor-pointer items-end justify-end gap-1 overflow-clip text-left disabled:cursor-default disabled:opacity-60",
@@ -249,12 +322,18 @@ export function UnderlineSelect({
       )}
 
       {open && (
-        <div className="absolute left-0 right-0 top-full z-20 overflow-hidden rounded-br-[4px] bg-white shadow-[0_4px_4px_rgba(0,0,0,0.25)]">
+        <div
+          ref={panel}
+          className="absolute left-0 right-0 top-full z-20 overflow-hidden rounded-br-[4px] bg-white shadow-[0_4px_4px_rgba(0,0,0,0.25)]"
+        >
           {searchable && (
             <input
               autoFocus
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              onChange={(e) => {
+                setQuery(e.target.value);
+                setActive(0);
+              }}
               placeholder="Почніть вводити…"
               className="w-full border-b border-[#e6e6e6] p-2.5 text-[16px] leading-[1.5] text-black outline-none placeholder:text-muted"
             />
@@ -268,11 +347,14 @@ export function UnderlineSelect({
                 Нічого не знайдено
               </li>
             )}
-            {shown.map((o) => (
+            {shown.map((o, i) => (
               <li key={o.value}>
                 <button
+                  id={`${uid}-${i}`}
                   type="button"
+                  tabIndex={-1}
                   role="option"
+                  onMouseMove={() => setActive(i)}
                   aria-selected={o.value === value}
                   onClick={() => {
                     onChange(o.value);
@@ -281,6 +363,7 @@ export function UnderlineSelect({
                   className={cn(
                     "w-full cursor-pointer p-2.5 text-left text-[16px] leading-[1.5] text-black transition-colors hover:bg-peach",
                     o.value === value && "bg-canvas",
+                    i === activeIndex && "bg-peach",
                   )}
                 >
                   {o.label}

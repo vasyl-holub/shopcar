@@ -175,8 +175,22 @@ export async function gqlRaw<T>(
     /* У логах сервера видно, що саме прийшло: сторінка 404 від Django
        означає неправильну адресу в WESTPART_API_URL, а перевірка
        Cloudflare — що бекенд не пускає запити з хостингу */
+    /* Хто саме відповів 429/403 — Cloudflare чи сам бекенд, видно з
+       заголовків: server, cf-ray, cf-mitigated, retry-after. Це те, що
+       потрібно показати тим, хто налаштовує бекенд */
+    const who = [
+      "server",
+      "cf-ray",
+      "cf-mitigated",
+      "retry-after",
+      "x-vercel-id",
+    ]
+      .map((h) => [h, res.headers.get(h)] as const)
+      .filter(([, v]) => v)
+      .map(([h, v]) => `${h}=${v}`)
+      .join(" ");
     console.error(
-      `[graphql] не JSON з ${ENDPOINT} (HTTP ${res.status}):`,
+      `[graphql] не JSON з ${ENDPOINT} (HTTP ${res.status}) [${who}]:`,
       text.slice(0, 200),
     );
     throw new GraphQLRequestError(

@@ -40,7 +40,7 @@ export default async function CartPage() {
           {isEmpty ? (
             <EmptyCart />
           ) : (
-            <CartView items={cart.items} total={cart.total} rates={rates} />
+            <CartView items={cart.items} rates={rates} />
           )}
         </section>
       </PageContainer>

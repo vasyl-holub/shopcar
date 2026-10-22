@@ -7,6 +7,7 @@ import {
   getCart,
   getCartCount,
   setCartItemCount,
+  setCartItemsActive,
 } from "@/lib/api/cart";
 
 export type CartActionState = { error?: string };
@@ -82,6 +83,18 @@ export async function changeCountsAction(
 
   revalidatePath("/cart");
   return { failed, count: await getCartCount() };
+}
+
+/** Відмітка позицій для замовлення: зберігається в кошику на бекенді */
+export async function setSelectionAction(ids: string[], active: boolean) {
+  if (ids.length === 0) return {};
+  try {
+    await setCartItemsActive(ids, active);
+  } catch {
+    return { error: "Не вдалося змінити вибір. Спробуйте ще раз." };
+  }
+  revalidatePath("/cart");
+  return {};
 }
 
 /** Видалення кількох позицій одразу — для кнопки «Видалити вибрані» */

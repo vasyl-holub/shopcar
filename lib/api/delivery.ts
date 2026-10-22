@@ -1,4 +1,5 @@
 import { gql } from "@/lib/api/graphql";
+import { getApiAuth } from "@/lib/api/session";
 import { npAreaCode } from "@/lib/np-areas";
 
 export type Choice = { value: string; label: string };
@@ -107,6 +108,60 @@ export async function getWarehouses(cityRef: string): Promise<Choice[]> {
       .filter((w) => w.description && w.isActive !== false)
       .sort((a, b) => (a.number ?? 0) - (b.number ?? 0))
       .map((w) => ({ value: w.description!, label: w.description! }));
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Службові склади, які клієнту як пункт самовивозу показувати не можна:
+ * 413 — RPD, 546 — LRD (внутрішні коди, а не міста). Відсікаємо за номером
+ * складу, щоб перейменування на бекенді їх не повернуло.
+ */
+const HIDDEN_PICKUP_STORES = new Set([413, 546]);
+
+const PICKUP_STORES = /* GraphQL */ `
+  query PickupStores {
+    storeAll(page: 1, perPage: 300) {
+      edges {
+        id
+        number
+        name
+        isLocalStore
+      }
+    }
+  }
+`;
+
+/**
+ * Пункти самовивозу для форми оформлення. Окремого переліку пунктів бекенд
+ * не віддає, але власні склади магазину відмічені `isLocalStore` — це
+ * Самбір, Львів, Дрогобич, Трускавець тощо. Назви складів бачить лише
+ * залогінений клієнт (анонімові вони приходять порожніми), тож запит іде
+ * із сесією й без кешу.
+ */
+export async function getPickupStores(): Promise<Choice[]> {
+  const auth = await getApiAuth();
+  if (!auth) return [];
+  try {
+    const data = await gql<{
+      storeAll: {
+        edges: {
+          id: string;
+          number: number | null;
+          name: string | null;
+          isLocalStore: boolean | null;
+        }[];
+      } | null;
+    }>(PICKUP_STORES, { auth });
+    return (data.storeAll?.edges ?? [])
+      .filter(
+        (s) =>
+          s.isLocalStore &&
+          s.name?.trim() &&
+          !HIDDEN_PICKUP_STORES.has(Number(s.number)),
+      )
+      .map((s) => ({ value: s.name!.trim(), label: s.name!.trim() }));
   } catch {
     return [];
   }

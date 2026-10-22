@@ -6,7 +6,7 @@ import { PromoStrip } from "@/components/shop/promo";
 import { CheckoutForm } from "@/components/checkout/checkout-form";
 import { canChangeDelivery, getCart, getOrderOptions } from "@/lib/api/cart";
 import { getCurrentUser } from "@/lib/api/auth";
-import { getDeliveryChoices } from "@/lib/api/delivery";
+import { getDeliveryChoices, getPickupStores } from "@/lib/api/delivery";
 import { homePromo } from "@/lib/home-content";
 
 export const metadata: Metadata = {
@@ -18,11 +18,12 @@ export default async function CheckoutPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
 
-  const [cart, options, choices, full] = await Promise.all([
-    getCart(),
+  const [cart, options, choices, full, shops] = await Promise.all([
+    getCart({ activeOnly: true }),
     getOrderOptions(),
     getDeliveryChoices(),
     canChangeDelivery(),
+    getPickupStores(),
   ]);
 
   /* Порожній кошик оформити не можна — повертаємо назад */
@@ -53,6 +54,7 @@ export default async function CheckoutPage() {
             simple={!full}
             regions={choices.regions}
             serviceTypes={choices.serviceTypes}
+            shops={shops}
             defaultName={user.fullName || user.firstName || ""}
             defaultPhone={user.phone ?? ""}
             defaultEmail={user.email ?? ""}

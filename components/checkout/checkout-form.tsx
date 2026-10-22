@@ -1,9 +1,14 @@
 "use client";
 
-import { useActionState, useState, useTransition } from "react";
+import {
+  useActionState,
+  useEffect,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { CircleCheck } from "lucide-react";
 import { CheckoutItem } from "@/components/checkout/checkout-item";
 import {
   Check,
@@ -25,9 +30,6 @@ import type { CartItem } from "@/lib/cart-format";
 import { formatIn, UAH } from "@/lib/money";
 import type { OrderOption } from "@/lib/api/cart";
 
-/** Магазини для самовивозу — міста з макета */
-const SHOPS = ["Львів", "Одеса", "Самбір"].map((c) => ({ value: c, label: c }));
-
 const sectionTitle = "text-[24px] font-semibold leading-none text-black";
 
 /**
@@ -42,6 +44,7 @@ export function CheckoutForm({
   simple,
   regions,
   serviceTypes,
+  shops,
   defaultName,
   defaultPhone,
   defaultEmail,
@@ -53,6 +56,8 @@ export function CheckoutForm({
   simple?: boolean;
   regions: Choice[];
   serviceTypes: Choice[];
+  /** Пункти самовивозу з бекенда */
+  shops: Choice[];
   defaultName: string;
   defaultPhone: string;
   defaultEmail: string;
@@ -69,7 +74,33 @@ export function CheckoutForm({
   const [, startTransition] = useTransition();
 
   const v = state.values ?? {};
-  const e = state.fieldErrors ?? {};
+  /* Помилка поля зникає, щойно його змінили; нова відповідь сервера
+     скидає список змінених, і помилки показуються знову */
+  const [touched, setTouched] = useState<{
+    state: CheckoutState;
+    names: string[];
+  }>({ state, names: [] });
+  const names = touched.state === state ? touched.names : [];
+  const clear = (name: string) =>
+    setTouched((prev) => {
+      const current = prev.state === state ? prev.names : [];
+      return current.includes(name)
+        ? prev
+        : { state, names: [...current, name] };
+    });
+
+  /* Після невдалої відправки підсвічуємо перше проблемне місце: помилка
+     могла лишитись за межами екрана, і здавалося б, що кнопка не працює */
+  const formRef = useRef<HTMLFormElement>(null);
+  useEffect(() => {
+    if (state.cartCount !== undefined) setCartCount(state.cartCount);
+  }, [state.cartCount]);
+  useEffect(() => {
+    if (!state.formError && !state.fieldErrors) return;
+    formRef.current
+      ?.querySelector('[role="alert"]')
+      ?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [state]);
 
   const [delivery, setDelivery] = useState(
     () => v.delivery || deliveries[0]?.id || "",
@@ -86,6 +117,25 @@ export function CheckoutForm({
   const [cities, setCities] = useState<Choice[]>([]);
   const [warehouses, setWarehouses] = useState<Choice[]>([]);
   const [loading, setLoading] = useState<"cities" | "warehouses" | null>(null);
+
+  /* Вибір, зроблений у списку, закриває лише помилку «Вкажіть …» —
+     відповідь бекенда про некоректне значення лишається до зміни поля */
+  const chosenNow: Record<string, string> = {
+    delivery,
+    payMethod,
+    shop,
+    npType,
+    npRegion: region,
+    npCity: cityRef,
+    npWarehouse: warehouse,
+  };
+  const e = Object.fromEntries(
+    Object.entries(state.fieldErrors ?? {}).filter(
+      ([name, text]) =>
+        !names.includes(name) &&
+        !(text.startsWith("Вкажіть") && chosenNow[name]),
+    ),
+  );
 
   const pickRegion = (next: string) => {
     setRegion(next);
@@ -154,33 +204,57 @@ export function CheckoutForm({
   };
 
   if (state.orderNumber) {
+    const number = state.orderNumber;
     return (
-      <div className="flex flex-col items-center gap-5 py-[60px] text-center text-black lg:py-[100px]">
-        <CircleCheck aria-hidden className="size-12 text-shop-green" />
-        <p className="text-h2 font-semibold leading-[1.2]">
-          Замовлення № {state.orderNumber} прийнято
+      <div className="flex flex-col gap-5 text-black">
+        <p className="border-b-2 border-orange pb-2.5 text-h2 font-semibold leading-[1.2]">
+          Ваше замовлення {number} прийнято
         </p>
-        <p className="max-w-[460px] text-[16px] leading-[1.5] text-muted">
-          Менеджер підтвердить наявність і надішле рахунок. Статус можна
-          відстежувати в кабінеті.
-        </p>
-        <Link href="/account" className={buttonClasses({ className: "mt-2" })}>
-          Мої замовлення
-        </Link>
+        <div className="flex flex-col gap-2.5 text-[16px] leading-[1.5]">
+          <p>Найближчим часом з Вами зв’яжеться наш менеджер.</p>
+          <p>
+            Після підтвердження Вашого замовлення, Вам буде відправлено листа з
+            інформацією про Ваше замовлення.
+          </p>
+        </div>
+        <div className="flex flex-col gap-2.5 sm:flex-row sm:justify-end sm:gap-5">
+          <Link
+            href={`/account/orders?number=${encodeURIComponent(number)}`}
+            className={buttonClasses({ className: "uppercase" })}
+          >
+            Переглянути замовлення {number}
+          </Link>
+          <Link
+            href="/account/orders"
+            className={buttonClasses({
+              variant: "outline",
+              className: "uppercase",
+            })}
+          >
+            Список замовлень
+          </Link>
+        </div>
       </div>
     );
   }
 
-  const carrier = deliveries.find((d) => d.id === delivery)?.name ?? "";
-  const pickup = /самовивіз/i.test(carrier);
-  const note = deliveries.find((d) => d.id === delivery)?.note;
+  const chosen = deliveries.find((d) => d.id === delivery);
+  const carrier = chosen?.name ?? "";
+  /* Самовивіз визначає прапорець бекенда, а не назва способу доставки */
+  const pickup = Boolean(chosen?.selfPickup);
+  const note = chosen?.note;
   const isNp = /нова\s*пошта/i.test(carrier);
   const toDoor = npType === "WarehouseDoors";
   const showFields = editing || Boolean(e.recipient || e.phone);
 
   return (
     <form
+      ref={formRef}
       action={action}
+      onInput={(ev) => {
+        const name = (ev.target as HTMLInputElement).name;
+        if (name) clear(name);
+      }}
       noValidate
       className="grid gap-[50px] lg:grid-cols-[minmax(0,1fr)_520px] lg:grid-rows-[auto_auto_1fr] lg:gap-x-[100px] lg:gap-y-10 xl:gap-x-[200px]"
     >
@@ -312,11 +386,15 @@ export function CheckoutForm({
                 label="Перевізник"
                 required
                 value={delivery}
-                onChange={setDelivery}
+                onChange={(next) => {
+                  clear("delivery");
+                  setDelivery(next);
+                }}
                 options={deliveries.map((d) => ({
                   value: d.id,
                   label: d.name,
                 }))}
+                error={e.delivery}
               />
               {note && (
                 <p className="rounded-[4px] border border-orange p-2.5 text-[14px] leading-[1.4] text-[#121212]">
@@ -343,7 +421,10 @@ export function CheckoutForm({
                     label="Тип доставки"
                     required
                     value={npType}
-                    onChange={setNpType}
+                    onChange={(next) => {
+                      clear("npType");
+                      setNpType(next);
+                    }}
                     options={serviceTypes}
                     error={e.npType}
                   />
@@ -352,7 +433,10 @@ export function CheckoutForm({
                     label="Область"
                     required
                     value={region}
-                    onChange={pickRegion}
+                    onChange={(next) => {
+                      clear("npRegion");
+                      pickRegion(next);
+                    }}
                     options={regions}
                     error={e.npRegion}
                   />
@@ -362,7 +446,10 @@ export function CheckoutForm({
                     required
                     searchable
                     value={cityRef}
-                    onChange={pickCity}
+                    onChange={(next) => {
+                      clear("npCity");
+                      pickCity(next);
+                    }}
                     options={cities}
                     disabled={!region}
                     loading={loading === "cities"}
@@ -384,7 +471,10 @@ export function CheckoutForm({
                       required
                       searchable
                       value={warehouse}
-                      onChange={setWarehouse}
+                      onChange={(next) => {
+                        clear("npWarehouse");
+                        setWarehouse(next);
+                      }}
                       options={warehouses}
                       disabled={!cityRef}
                       loading={loading === "warehouses"}
@@ -398,8 +488,11 @@ export function CheckoutForm({
                   label="Магазин"
                   required
                   value={shop}
-                  onChange={setShop}
-                  options={SHOPS}
+                  onChange={(next) => {
+                    clear("shop");
+                    setShop(next);
+                  }}
+                  options={shops}
                   error={e.shop}
                 />
               ) : (
@@ -408,6 +501,7 @@ export function CheckoutForm({
                   name="address"
                   label="Адреса доставки"
                   defaultValue={v.address}
+                  error={e.address}
                 />
               )}
             </section>
@@ -446,11 +540,15 @@ export function CheckoutForm({
                 label="Спосіб оплати"
                 required
                 value={payMethod}
-                onChange={setPayMethod}
+                onChange={(next) => {
+                  clear("payMethod");
+                  setPayMethod(next);
+                }}
                 options={payMethods.map((p) => ({
                   value: p.id,
                   label: p.name,
                 }))}
+                error={e.payMethod}
               />
             </section>
 

@@ -13,6 +13,7 @@ import {
   changeCountsAction,
   removeItemAction,
   removeItemsAction,
+  setSelectionAction,
 } from "@/app/cart/actions";
 import { setCartCount } from "@/lib/cart-count";
 import type { CartItem } from "@/lib/cart-format";
@@ -474,12 +475,9 @@ function CartRow({
 
 export function CartView({
   items,
-  total,
   rates,
 }: {
   items: CartItem[];
-  /** Загальна сума кошика, грн */
-  total: number;
   rates: CurrencyRate[];
 }) {
   const router = useRouter();
@@ -488,7 +486,9 @@ export function CartView({
   const [sortKey, setSortKey] = useState<SortKey>("price");
   const [descending, setDescending] = useState(false);
   const [currencyCode, setCurrencyCode] = useState("UAH");
-  const [selected, setSelected] = useState<Set<string>>(new Set());
+  /* Відмітка = «ця позиція йде в замовлення». Джерело — isActive з бекенда,
+     локальні зміни лежать поверх нього, поки не повернеться свіжий кошик */
+  const [marks, setMarks] = useState<Record<string, boolean>>({});
   /* Змінені кількості, ще не застосовані на сервері: id → кількість */
   const [drafts, setDrafts] = useState<Record<string, number>>({});
   const [applyError, setApplyError] = useState<string | undefined>();
@@ -510,14 +510,6 @@ export function CartView({
     .filter((i) => drafts[i.id] !== undefined && drafts[i.id] !== i.count)
     .map((i) => ({ id: i.id, count: drafts[i.id] }));
   const dirty = changes.length > 0;
-
-  /* Сума одразу відображає чернетки, не чекаючи сервера */
-  const displayTotal = items.reduce((sum, item) => {
-    const draft = drafts[item.id];
-    return draft === undefined
-      ? sum
-      : sum + unitPrice(item) * (draft - item.count);
-  }, total);
 
   /** Відправляє всі змінені кількості одним викликом. true — все вдалося */
   const applyChanges = () =>
@@ -592,26 +584,47 @@ export function CartView({
     return list;
   }, [items, sortKey, descending]);
 
-  /* Позиції, яких уже немає в кошику, зі вибору прибираємо */
+  const isChecked = (item: CartItem) => marks[item.id] ?? item.isActive;
   const validSelected = useMemo(
-    () => new Set([...selected].filter((id) => items.some((i) => i.id === id))),
-    [selected, items],
+    () => new Set(items.filter(isChecked).map((i) => i.id)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [items, marks],
   );
   const allSelected = items.length > 0 && validSelected.size === items.length;
 
-  const toggle = (id: string, next: boolean) =>
-    setSelected((prev) => {
-      const copy = new Set(prev);
-      if (next) copy.add(id);
-      else copy.delete(id);
-      return copy;
+  /* Сума лише по відмічених позиціях, з урахуванням чернеток кількості */
+  const displayTotal = items.reduce(
+    (sum, item) =>
+      validSelected.has(item.id)
+        ? sum + unitPrice(item) * (drafts[item.id] ?? item.count)
+        : sum,
+    0,
+  );
+
+  const [selectError, setSelectError] = useState<string | undefined>();
+  const mark = (ids: string[], next: boolean) => {
+    if (ids.length === 0) return;
+    setSelectError(undefined);
+    setMarks((prev) => ({
+      ...prev,
+      ...Object.fromEntries(ids.map((id) => [id, next])),
+    }));
+    void setSelectionAction(ids, next).then((res) => {
+      if (!res.error) return;
+      setSelectError(res.error);
+      setMarks((prev) => ({
+        ...prev,
+        ...Object.fromEntries(ids.map((id) => [id, !next])),
+      }));
     });
+  };
+  const toggle = (id: string, next: boolean) => mark([id], next);
 
   const removeSelected = () =>
     startRemoving(async () => {
       const res = await removeItemsAction([...validSelected]);
       if (res.count !== undefined) setCartCount(res.count);
-      setSelected(new Set());
+      setMarks({});
     });
 
   const headCell = "text-[16px] font-semibold leading-[1.5] text-[#121212]";
@@ -679,8 +692,11 @@ export function CartView({
                 <Checkbox
                   checked={allSelected}
                   onChange={(next) =>
-                    setSelected(
-                      next ? new Set(items.map((i) => i.id)) : new Set(),
+                    mark(
+                      items
+                        .filter((i) => isChecked(i) !== next)
+                        .map((i) => i.id),
+                      next,
                     )
                   }
                   label="Вибрати всі позиції"
@@ -728,6 +744,22 @@ export function CartView({
             Кількість змінено, але ще не збережено — натисніть «Перерахувати».
           </p>
         )}
+        {selectError && (
+          <p
+            role="alert"
+            className="-mt-5 text-[14px] leading-[1.4] text-danger-700"
+          >
+            {selectError}
+          </p>
+        )}
+        {validSelected.size === 0 && (
+          <p
+            role="status"
+            className="-mt-5 text-[14px] leading-[1.4] text-muted"
+          >
+            Відмітьте позиції, які потрібно замовити.
+          </p>
+        )}
         {applyError && (
           <p
             role="alert"
@@ -751,7 +783,12 @@ export function CartView({
           </button>
           <Link
             href="/checkout"
+            aria-disabled={validSelected.size === 0}
             onClick={(e) => {
+              if (validSelected.size === 0) {
+                e.preventDefault();
+                return;
+              }
               /* Не залишаємо неоформлені зміни: спершу зберігаємо їх,
                  а вже потім ведемо на оформлення */
               if (!dirty) return;
@@ -760,7 +797,10 @@ export function CartView({
                 if (ok) router.push("/checkout");
               });
             }}
-            className={buttonClasses({ className: "w-full lg:w-auto" })}
+            className={cn(
+              buttonClasses({ className: "w-full lg:w-auto" }),
+              validSelected.size === 0 && "pointer-events-none opacity-50",
+            )}
           >
             ОФОРМИТИ ЗАМОВЛЕННЯ
           </Link>
