@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { ImageOff } from "lucide-react";
 import { MultiSelect } from "@/components/account/multi-select";
@@ -225,6 +225,7 @@ export function OrderExpand({
   itemLabels,
   failedStatuses,
   reasons,
+  defaultOpen,
   children,
 }: {
   orderId: string;
@@ -234,12 +235,14 @@ export function OrderExpand({
   itemLabels: Record<string, string>;
   /** Коди статусів позицій, що показуємо червоним (скасовано, повернено…) */
   failedStatuses: string[];
+  /** Відкрити рядок одразу (перехід із листа за номером замовлення) */
+  defaultOpen?: boolean;
   /** Причини повернення (українською) за кодом */
   reasons: Record<string, string>;
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(Boolean(defaultOpen));
   const [order, setOrder] = useState<OrderDetails | null>(null);
   const [failed, setFailed] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -254,6 +257,11 @@ export function OrderExpand({
       setOrder(data);
       setFailed(!data);
     });
+
+  useEffect(() => {
+    if (defaultOpen) load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const toggleRow = (e: React.MouseEvent) => {
     /* Клік по значках дій у рядку не розгортає його */

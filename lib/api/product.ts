@@ -1,5 +1,6 @@
 import { gql } from "@/lib/api/graphql";
 import { getApiAuth } from "@/lib/api/session";
+import { queryVariants } from "@/lib/search";
 
 /** Пропозиція складу. `id` — саме те, що приймає addCartItem */
 export type ProductOffer = {
@@ -333,6 +334,14 @@ function qualityOf(
   return hit?.value?.trim() || null;
 }
 
+/**
+ * Текстове поле бекенда як рядок. Для залогінених клієнтів частина полів
+ * складу (номер складу, телефон) приходить числом, і `.trim()` на ньому
+ * валив сторінку товару.
+ */
+const text = (value: unknown): string | null =>
+  value == null ? null : String(value).trim() || null;
+
 function toOffer(raw: RawOffer): ProductOffer {
   const store = raw.store;
   const work = store?.workUpTo;
@@ -344,29 +353,27 @@ function toOffer(raw: RawOffer): ProductOffer {
       .filter((d) => d.discountName && d.price != null)
       .map((d) => ({ name: d.discountName!, price: d.price! })),
     count: raw.count,
-    deliveryDays: raw.deliveryDaysHumanize?.trim() || null,
+    deliveryDays: text(raw.deliveryDaysHumanize),
     minDays: raw.minDeliveryDay ?? null,
     maxDays: raw.maxDeliveryDay ?? null,
     canBuy: raw.canBuy ?? false,
     note:
-      [raw.description, raw.comment]
-        .map((t) => t?.trim())
-        .filter(Boolean)
-        .join(". ") || null,
+      [raw.description, raw.comment].map(text).filter(Boolean).join(". ") ||
+      null,
     store: store
       ? {
-          name: store.name?.trim() || null,
+          name: text(store.name),
           isLocal: Boolean(store.isLocalStore),
           returnDays: store.returnDays ?? null,
           workUpTo: work != null && work !== "" ? Number(work) : null,
-          publicNote: store.publicNote?.trim() || null,
-          number: store.number?.trim() || null,
+          publicNote: text(store.publicNote),
+          number: text(store.number),
           updated: store.updated ?? null,
           priority: store.priority ?? null,
-          address: store.address?.trim() || null,
-          phone: store.phone?.trim() || null,
-          url: store.url?.trim() || null,
-          description: store.description?.trim() || null,
+          address: text(store.address),
+          phone: text(store.phone),
+          url: text(store.url),
+          description: text(store.description),
           deliveryDays:
             store.deliveryDays != null &&
             String(store.deliveryDays).trim() !== ""
@@ -871,6 +878,23 @@ export async function searchProducts(
   query: string,
   page = 1,
   perPage = 24,
+): Promise<{ items: ProductListItem[]; total: number; corrected?: string }> {
+  const found = await queryProducts(query, page, perPage);
+  if (found.total > 0) return found;
+
+  /* Артикул, набраний кирилицею: або двійники латиниці («СХ010» з
+     кириличними С і Х), або не та розкладка («щс0002в» замість «OC0002D») */
+  for (const corrected of queryVariants(query)) {
+    const retry = await queryProducts(corrected, page, perPage);
+    if (retry.total > 0) return { ...retry, corrected };
+  }
+  return found;
+}
+
+async function queryProducts(
+  query: string,
+  page: number,
+  perPage: number,
 ): Promise<{ items: ProductListItem[]; total: number }> {
   const num = query.trim();
   if (!num) return { items: [], total: 0 };

@@ -24,11 +24,12 @@ export async function GET(request: Request) {
     return NextResponse.json({ items: [], total: 0 });
   }
 
-  const { items, total } = await searchProducts(q, 1, LIMIT);
+  const { items, total, corrected } = await searchProducts(q, 1, LIMIT);
 
   return NextResponse.json(
     {
       total,
+      corrected,
       items: items.map((p) => ({
         id: p.id,
         slug: p.slug,

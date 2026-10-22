@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { isRemoteImage } from "@/lib/images";
+import { isRemoteImage, publicImage } from "@/lib/images";
 import { PartImage } from "@/components/catalog/part-image";
 
 /**
@@ -38,7 +38,7 @@ export function ProductPhoto({
   fallback?: React.ReactNode;
 }) {
   const [index, setIndex] = useState(0);
-  const src = sources[index];
+  const src = sources[index] ? publicImage(sources[index]) : undefined;
 
   if (!src) {
     if (fallback) return <>{fallback}</>;

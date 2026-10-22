@@ -26,9 +26,16 @@ export type GraphQLErrorItem = {
  */
 export function mediaUrl(path?: string | null) {
   if (!path) return null;
-  if (/^https?:\/\//i.test(path)) return encodeURI(path);
-  const origin = new URL(ENDPOINT).origin;
-  return encodeURI(`${origin}${path.startsWith("/") ? "" : "/"}${path}`);
+  const full = /^https?:\/\//i.test(path)
+    ? path
+    : `${new URL(ENDPOINT).origin}${path.startsWith("/") ? "" : "/"}${path}`;
+  /* Файли з /media лежать на публічному домені; на manage частини немає */
+  return encodeURI(
+    full.replace(
+      /^https?:\/\/manage\.shopcar\.ua\/media\//i,
+      "https://shopcar.ua/media/",
+    ),
+  );
 }
 
 /**

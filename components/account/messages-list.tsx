@@ -4,6 +4,7 @@ import { useMemo, useState, useTransition } from "react";
 
 import { useRouter } from "next/navigation";
 
+import { MessageText } from "@/components/account/message-body";
 import { Dropdown } from "@/components/ui/dropdown";
 
 import { ShopIcon } from "@/components/ui/shop-icon";
@@ -251,10 +252,10 @@ export function MessagesList({ items }: { items: Informer[] }) {
                   </span>
                 </div>
 
-                {open === item.id && item.text && (
-                  <p className="mt-2.5 whitespace-pre-line pl-[137px] text-[14px] font-normal leading-[1.4] text-[#121212]">
-                    {item.text}
-                  </p>
+                {open === item.id && (
+                  <div className="mt-2.5 pl-[137px]">
+                    <MessageText id={item.id} />
+                  </div>
                 )}
               </li>
             ))}

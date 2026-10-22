@@ -11,3 +11,16 @@
 export function isRemoteImage(src: string) {
   return /^https?:\/\//i.test(src);
 }
+
+/**
+ * Фото товарів бекенд віддає з адресою піддомену адмінки
+ * (manage.shopcar.ua/media/…), але частина файлів лежить лише на публічному
+ * домені: на manage вони дають 404, а на shopcar.ua відкриваються. Тому всі
+ * зображення з /media беремо з публічного домену.
+ */
+export function publicImage(src: string) {
+  return src.replace(
+    /^https?:\/\/manage\.shopcar\.ua\/media\//i,
+    "https://shopcar.ua/media/",
+  );
+}

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { isRemoteImage } from "@/lib/images";
+import { isRemoteImage, publicImage } from "@/lib/images";
 import { YoutubeMark } from "@/components/ui/icons";
 import { PartImage } from "@/components/catalog/part-image";
 import { cn } from "@/lib/cn";
@@ -31,7 +31,9 @@ export function PartGallery({
 
   /* Порожні рядки серед зображень трапляються: next/image на такому src
      кидає помилку й змушує браузер тягнути сторінку вдруге */
-  const all = (video ? [...photos, video] : photos).filter(Boolean);
+  const all = (
+    video ? [...photos.map(publicImage), video] : photos.map(publicImage)
+  ).filter(Boolean);
   const thumbs = all.filter((src) => !broken.has(src));
 
   /* Список міг скоротитися під активним кадром — тримаємо індекс у межах */

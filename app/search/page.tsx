@@ -29,7 +29,7 @@ export default async function SearchPage({
   const q = typeof sp.q === "string" ? sp.q.trim() : "";
   const page = Math.max(1, Number(sp.page) || 1);
 
-  const { items, total } = await searchProducts(q, page, PER_PAGE);
+  const { items, total, corrected } = await searchProducts(q, page, PER_PAGE);
 
   /* Єдиний збіг — показувати список з одного рядка нема сенсу, ведемо
      одразу на товар. redirect поза Server Action замінює запис в історії,
@@ -37,6 +37,8 @@ export default async function SearchPage({
   const only = total === 1 ? items[0] : undefined;
   if (only?.slug && only.id) redirect(`/part/${only.slug}/${only.id}`);
 
+  /* Розкладка виправлена автоматично — переходи між сторінками тримають
+     вихідний запит, а виправлення бекенд знайде знову */
   const base = `/search?q=${encodeURIComponent(q)}`;
   const pages = Math.ceil(total / PER_PAGE);
 
@@ -76,6 +78,13 @@ export default async function SearchPage({
             <ShopIcon name="search" />
           </button>
         </form>
+
+        {corrected && (
+          <p className="text-[14px] leading-[1.4] text-black">
+            Показано результати для «{corrected}»: схоже, запит набрано в іншій
+            розкладці клавіатури.
+          </p>
+        )}
 
         {q && (
           <p className="text-[14px] leading-[1.4] text-muted">

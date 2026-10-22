@@ -122,12 +122,14 @@ function Row({
   itemLabels,
   failedStatuses,
   reasons,
+  defaultOpen,
 }: {
   row: OrderRow;
   statusLabel: string;
   itemLabels: Record<string, string>;
   failedStatuses: string[];
   reasons: Record<string, string>;
+  defaultOpen?: boolean;
 }) {
   const canceled = row.status === CANCELED;
   return (
@@ -138,6 +140,7 @@ function Row({
       itemLabels={itemLabels}
       failedStatuses={failedStatuses}
       reasons={reasons}
+      defaultOpen={defaultOpen}
     >
       <span className="tnum">{row.number}</span>
       <span className="tnum flex gap-1.5 max-lg:gap-2.5 max-lg:[font-variant-numeric:normal]">
@@ -425,6 +428,9 @@ export default async function OrdersPage({
                   itemLabels={itemLabels}
                   failedStatuses={failedStatuses}
                   reasons={reasons}
+                  defaultOpen={
+                    Boolean(filters.number) && data.rows.length === 1
+                  }
                 />
               ))}
             </ul>

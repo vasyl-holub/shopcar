@@ -47,6 +47,7 @@ export function SearchSuggest({
     query: string;
     items: Suggestion[];
     total: number;
+    corrected?: string;
   } | null>(null);
   const [open, setOpen] = useState(false);
   /* -1 — нічого не підсвічено, Enter тоді веде на сторінку результатів */
@@ -68,6 +69,7 @@ export function SearchSuggest({
   const fresh = result?.query === query ? result : null;
   const items = fresh?.items ?? [];
   const total = fresh?.total ?? 0;
+  const corrected = fresh?.corrected;
   const loading = ready && !fresh;
 
   useEffect(() => {
@@ -83,8 +85,14 @@ export function SearchSuggest({
         const data = (await res.json()) as {
           items?: Suggestion[];
           total?: number;
+          corrected?: string;
         };
-        setResult({ query, items: data.items ?? [], total: data.total ?? 0 });
+        setResult({
+          query,
+          items: data.items ?? [],
+          total: data.total ?? 0,
+          corrected: data.corrected,
+        });
         setActive(-1);
       } catch {
         /* Запит обірвано наступною клавішею або впала мережа —
@@ -203,7 +211,7 @@ export function SearchSuggest({
           id={listId}
           role="listbox"
           aria-label="Підказки пошуку"
-          className="absolute inset-x-0 top-full z-50 mt-2 overflow-hidden rounded-[12px] border border-grey-200 bg-white shadow-lg"
+          className="absolute inset-x-0 top-full z-50 mt-1 overflow-hidden rounded-[4px] border border-line bg-white shadow-[0_4px_4px_rgba(0,0,0,0.25)]"
         >
           {vin ? (
             <Link
@@ -212,23 +220,28 @@ export function SearchSuggest({
                 setOpen(false);
                 onNavigate?.();
               }}
-              className="flex items-center justify-between gap-3 px-4 py-4 transition-colors hover:bg-blue-25"
+              className="flex items-center justify-between gap-3 px-4 py-4 transition-colors hover:bg-peach"
             >
               <span className="min-w-0">
-                <span className="block text-[15px] font-semibold leading-[1.4] text-black-900">
+                <span className="block text-[14px] font-semibold leading-[1.4] text-[#121212]">
                   Схоже на VIN-код
                 </span>
-                <span className="mt-0.5 block text-[14px] leading-[1.4] text-grey-700">
+                <span className="mt-0.5 block text-[12px] leading-[1.33] text-muted">
                   Менеджер підбере деталь за ним — заповніть короткий запит
                 </span>
               </span>
-              <span aria-hidden className="shrink-0 text-blue-300">
+              <span aria-hidden className="shrink-0 text-orange">
                 →
               </span>
             </Link>
           ) : items.length > 0 ? (
             <>
-              <div className="max-h-[60vh] overflow-y-auto p-1.5">
+              {corrected && (
+                <p className="border-b border-line px-2.5 py-2 text-[12px] leading-[1.33] text-muted">
+                  Показано результати для «{corrected}»
+                </p>
+              )}
+              <div className="scrollbar-orange max-h-[60vh] overflow-y-auto">
                 {items.map((item, i) => (
                   <Link
                     key={item.id}
@@ -241,11 +254,11 @@ export function SearchSuggest({
                       onNavigate?.();
                     }}
                     className={cn(
-                      "flex items-center gap-3 rounded-[8px] px-2 py-2 transition-colors",
-                      i === active ? "bg-blue-25" : "hover:bg-blue-25",
+                      "flex items-center gap-3 px-2.5 py-2 transition-colors",
+                      i === active ? "bg-peach" : "hover:bg-peach",
                     )}
                   >
-                    <span className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-[6px] border border-grey-200 bg-white">
+                    <span className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-[4px] border border-line bg-white">
                       <ProductPhoto
                         sources={item.images}
                         alt={item.name}
@@ -260,15 +273,15 @@ export function SearchSuggest({
                     <span className="min-w-0 flex-1">
                       <span className="flex flex-wrap items-baseline gap-x-2">
                         {item.brand && (
-                          <span className="text-[15px] font-semibold leading-[1.4] text-black-900">
+                          <span className="text-[14px] font-semibold leading-[1.4] text-[#121212]">
                             {item.brand}
                           </span>
                         )}
-                        <span className="tnum text-[15px] font-semibold leading-[1.4] text-blue-300">
+                        <span className="tnum text-[14px] font-semibold leading-[1.4] text-orange">
                           {item.num}
                         </span>
                       </span>
-                      <span className="mt-0.5 block truncate text-[14px] leading-[1.4] text-grey-700">
+                      <span className="mt-0.5 block truncate text-[12px] leading-[1.33] text-muted">
                         {item.name}
                       </span>
                     </span>
@@ -283,7 +296,7 @@ export function SearchSuggest({
                     setOpen(false);
                     onNavigate?.();
                   }}
-                  className="flex items-center justify-center gap-1.5 border-t border-grey-200 px-4 py-3 text-[15px] font-semibold leading-[1.5] text-blue-300 transition-colors hover:bg-blue-25"
+                  className="flex items-center justify-center gap-1.5 border-t border-line px-4 py-3 text-[14px] font-semibold leading-[1.4] text-orange transition-colors hover:bg-peach"
                 >
                   Показати всі результати
                   <span aria-hidden>→</span>
@@ -291,7 +304,7 @@ export function SearchSuggest({
               )}
             </>
           ) : (
-            <div className="px-4 py-4 text-[15px] leading-[1.5] text-grey-700">
+            <div className="px-4 py-4 text-[14px] leading-[1.4] text-[#121212]">
               {loading ? (
                 "Шукаємо…"
               ) : (
@@ -303,7 +316,7 @@ export function SearchSuggest({
                       setOpen(false);
                       onNavigate?.();
                     }}
-                    className="font-semibold text-blue-300 hover:underline"
+                    className="font-semibold text-orange hover:underline"
                   >
                     Створити запит на підбір
                   </Link>

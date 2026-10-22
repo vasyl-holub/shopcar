@@ -1,8 +1,10 @@
 "use server";
 
+import { headers } from "next/headers";
+import { after } from "next/server";
 import { redirect } from "next/navigation";
 import { loginUser, logoutUser } from "@/lib/api/auth";
-import { clearSession, saveSession } from "@/lib/api/session";
+import { clearSession, getApiAuth, saveSession } from "@/lib/api/session";
 import { GraphQLRequestError } from "@/lib/api/graphql";
 import type { AuthFormState } from "@/app/register/actions";
 
@@ -52,8 +54,32 @@ export async function loginActionFn(
   redirect("/account");
 }
 
+/**
+ * Куди повернути після виходу: туди, звідки натиснули (якщо це відкрита
+ * сторінка, а не кабінет). Інакше головна — а вона найважча, тож без потреби
+ * на неї не ведемо.
+ */
+async function pageAfterLogout() {
+  const list = await headers();
+  const referer = list.get("referer");
+  if (!referer) return "/";
+  try {
+    const url = new URL(referer);
+    if (url.host !== list.get("host")) return "/";
+    if (/^\/(account|checkout)(\/|$)/.test(url.pathname)) return "/";
+    return `${url.pathname}${url.search}`;
+  } catch {
+    return "/";
+  }
+}
+
 export async function logoutAction() {
-  await logoutUser();
+  const auth = await getApiAuth();
+  const next = await pageAfterLogout();
+
+  /* Свою сесію закриваємо одразу, а бекенду повідомляємо вже після
+     відповіді: людина не чекає на його відповідь, щоб побачити вихід */
   await clearSession();
-  redirect("/");
+  after(() => logoutUser(auth));
+  redirect(next);
 }

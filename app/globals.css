@@ -513,3 +513,10 @@
   max-width: 100%;
   height: auto;
 }
+
+/* У макеті в полі пошуку немає хрестика очищення: прибираємо
+   стандартну синю кнопку браузера */
+input[type="search"]::-webkit-search-cancel-button {
+  display: none;
+  -webkit-appearance: none;
+}

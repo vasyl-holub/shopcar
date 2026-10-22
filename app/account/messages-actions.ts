@@ -1,7 +1,16 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { deleteInformers, markInformersRead } from "@/lib/api/informers";
+import {
+  deleteInformers,
+  getInformerText,
+  markInformersRead,
+} from "@/lib/api/informers";
+
+/** Текст листа за запитом: у списку його немає, щоб кабінет відкривався швидко */
+export async function loadMessageTextAction(id: string) {
+  return getInformerText(id);
+}
 
 /** Позначає вибрані повідомлення прочитаними; false — бекенд відмовив */
 export async function readMessagesAction(ids: string[]) {

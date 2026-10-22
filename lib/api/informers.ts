@@ -4,7 +4,6 @@ import { getApiAuth } from "@/lib/api/session";
 export type Informer = {
   id: string;
   subject: string;
-  text: string;
   isRead: boolean;
   created: string;
   sender: string;
@@ -16,7 +15,6 @@ const INFORMERS = /* GraphQL */ `
       edges {
         id
         subject
-        text
         isRead
         isDeleted
         created
@@ -28,7 +26,12 @@ const INFORMERS = /* GraphQL */ `
   }
 `;
 
-/** Повідомлення кабінету (системні листи про замовлення, оплати тощо) */
+/**
+ * Список повідомлень кабінету (системні листи про замовлення, оплати тощо).
+ * Тіла листів сюди свідомо не входять: це повні HTML-документи по десятки
+ * кілобайт, і сотня таких у відповіді робила відкриття кабінету після входу
+ * хвилинним. Текст підвантажується окремо, коли лист відкривають.
+ */
 export async function getInformers(): Promise<Informer[]> {
   const auth = await getApiAuth();
   if (!auth) return [];
@@ -38,7 +41,6 @@ export async function getInformers(): Promise<Informer[]> {
         edges: {
           id: string;
           subject: string | null;
-          text: string | null;
           isRead: boolean | null;
           isDeleted: boolean | null;
           created: string | null;
@@ -51,13 +53,33 @@ export async function getInformers(): Promise<Informer[]> {
       .map((e) => ({
         id: e.id,
         subject: e.subject ?? "",
-        text: e.text ?? "",
         isRead: Boolean(e.isRead),
         created: e.created ?? "",
         sender: e.sender?.email ?? "",
       }));
   } catch {
     return [];
+  }
+}
+
+/** Текст одного листа; порожній рядок, якщо бекенд не відповів */
+export async function getInformerText(id: string): Promise<string> {
+  const auth = await getApiAuth();
+  if (!auth) return "";
+  try {
+    const data = await gql<{ informer: { text: string | null } | null }>(
+      /* GraphQL */ `
+        query InformerText($id: ID) {
+          informer(id: $id) {
+            text
+          }
+        }
+      `,
+      { auth, variables: { id } },
+    );
+    return data.informer?.text ?? "";
+  } catch {
+    return "";
   }
 }
 

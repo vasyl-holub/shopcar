@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import { ImageOff } from "lucide-react";
-import { isRemoteImage } from "@/lib/images";
+import { isRemoteImage, publicImage } from "@/lib/images";
 import { cn } from "@/lib/cn";
 
 /**
@@ -21,7 +21,10 @@ export function ProductGallery({
   const [active, setActive] = useState(0);
   const [broken, setBroken] = useState<ReadonlySet<string>>(new Set());
 
-  const thumbs = photos.filter(Boolean).filter((src) => !broken.has(src));
+  const thumbs = photos
+    .filter(Boolean)
+    .map(publicImage)
+    .filter((src) => !broken.has(src));
   const index = Math.min(active, Math.max(0, thumbs.length - 1));
   const current = thumbs[index];
 

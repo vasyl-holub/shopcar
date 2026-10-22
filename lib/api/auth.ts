@@ -1,5 +1,5 @@
 import { cache } from "react";
-import { gql, gqlRaw } from "@/lib/api/graphql";
+import { gql, gqlRaw, type ApiAuth } from "@/lib/api/graphql";
 import { getApiAuth } from "@/lib/api/session";
 
 /* ------------------------------------------------------- Довідники форми */
@@ -142,8 +142,12 @@ const LOGOUT = /* GraphQL */ `
   }
 `;
 
-export async function logoutUser() {
-  const auth = await getApiAuth();
+/**
+ * Вихід на бекенді. Сесію можна передати самому: після відповіді клієнту
+ * (`after`) кукі вже недоступні, тож їх беремо до очищення.
+ */
+export async function logoutUser(session?: ApiAuth) {
+  const auth = session ?? (await getApiAuth());
   try {
     await gql(LOGOUT, { auth });
   } catch {
