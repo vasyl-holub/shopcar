@@ -511,7 +511,7 @@ export function CheckoutForm({
               ) : pickup ? (
                 <UnderlineSelect
                   name="shop"
-                  label="Магазин"
+                  label="Пункт збирання"
                   required
                   value={shop}
                   onChange={(next) => {

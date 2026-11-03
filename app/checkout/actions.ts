@@ -49,7 +49,7 @@ const LABELS: Record<string, string> = {
   npCity: "місто",
   npWarehouse: "відділення",
   address: "адресу доставки",
-  shop: "магазин",
+  shop: "пункт збирання",
   deliveryInfo: "відділення",
   city: "місто",
 };
@@ -127,8 +127,9 @@ export async function createOrderAction(
     ? toDoor
       ? values.address
       : values.npWarehouse
-    : values.shop
-      ? `Магазин: ${values.shop}`
+    : /* Самовивіз: адреси немає, є пункт збирання */
+      values.shop
+      ? ""
       : values.address;
   /* Поле бекенда — «номер склада або поштовий індекс»: лише номер відділення,
      а повний опис доставки менеджер бачить у коментарі */
@@ -148,6 +149,7 @@ export async function createOrderAction(
   /* Окремого поля для автомобіля бекенд не має — дописуємо до коментаря */
   const comment = [
     npDetails && `Нова пошта: ${npDetails}`,
+    values.shop && `Пункт збирання: ${values.shop}`,
     values.car && `Автомобіль: ${values.car}`,
     orderedBy,
     values.comment,
