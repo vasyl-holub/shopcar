@@ -5,7 +5,7 @@ import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 import { PromoStrip } from "@/components/shop/promo";
 import { CheckoutForm } from "@/components/checkout/checkout-form";
 import { canChangeDelivery, getCart, getOrderOptions } from "@/lib/api/cart";
-import { getCurrentUser } from "@/lib/api/auth";
+import { getCurrentUser, getRegistrationFormData } from "@/lib/api/auth";
 import { getDeliveryChoices, getPickupStores } from "@/lib/api/delivery";
 import { homePromo } from "@/lib/home-content";
 
@@ -16,14 +16,15 @@ export const metadata: Metadata = {
 
 export default async function CheckoutPage() {
   const user = await getCurrentUser();
-  if (!user) redirect("/login");
 
-  const [cart, options, choices, full, shops] = await Promise.all([
+  /* Гість: «замовлення в один клік» — лише контакти й капча */
+  const [cart, options, choices, full, shops, form] = await Promise.all([
     getCart({ activeOnly: true }),
-    getOrderOptions(),
-    getDeliveryChoices(),
-    canChangeDelivery(),
-    getPickupStores(),
+    user ? getOrderOptions() : { deliveries: [], payMethods: [] },
+    user ? getDeliveryChoices() : { regions: [], serviceTypes: [] },
+    user ? canChangeDelivery() : false,
+    user ? getPickupStores() : [],
+    user ? undefined : getRegistrationFormData().catch(() => undefined),
   ]);
 
   /* Порожній кошик оформити не можна — повертаємо назад */
@@ -55,9 +56,10 @@ export default async function CheckoutPage() {
             regions={choices.regions}
             serviceTypes={choices.serviceTypes}
             shops={shops}
-            defaultName={user.fullName || user.firstName || ""}
-            defaultPhone={user.phone ?? ""}
-            defaultEmail={user.email ?? ""}
+            guestSiteKey={user ? undefined : (form?.siteKey ?? "")}
+            defaultName={user?.fullName || user?.firstName || ""}
+            defaultPhone={user?.phone ?? ""}
+            defaultEmail={user?.email ?? ""}
           />
         </section>
       </PageContainer>

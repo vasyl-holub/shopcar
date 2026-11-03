@@ -99,7 +99,32 @@ export type RegisterInput = {
   captcha: string;
 };
 
-export async function registerUser(input: RegisterInput) {
+/**
+ * Різні версії бекенда приймають ПІБ по-різному: одним рядком (`fio`) або
+ * трьома полями (`lastName`, `firstName`, `fatherName`). Дивимось у схему
+ * один раз і підлаштовуємось — інакше реєстрація падає помилкою
+ * «Field 'fio' is not defined by type 'RegisterMutationInput'».
+ */
+let splitName: Promise<boolean> | undefined;
+
+function usesSplitName() {
+  splitName ??= gql<{ __type: { inputFields: { name: string }[] } | null }>(
+    `{ __type(name: "RegisterMutationInput") { inputFields { name } } }`,
+    { revalidate: 60 * 60 },
+  )
+    .then((d) => !d.__type?.inputFields.some((f) => f.name === "fio"))
+    .catch(() => {
+      splitName = undefined;
+      return false;
+    });
+  return splitName;
+}
+
+export async function registerUser({ fio, ...rest }: RegisterInput) {
+  const [lastName = "", firstName = "", ...father] = fio.split(/\s+/);
+  const input = (await usesSplitName())
+    ? { ...rest, lastName, firstName, fatherName: father.join(" ") }
+    : { ...rest, fio };
   return gqlRaw<RegisterResponse>(REGISTER, { variables: { input } });
 }
 

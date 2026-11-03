@@ -85,11 +85,18 @@ export async function getInformerText(id: string): Promise<string> {
 
 export async function markInformersRead(ids: string[]) {
   const auth = await getApiAuth();
-  return gqlRaw<{ makeReadInformer: { errors: string[] } }>(
+  return gqlRaw<{
+    makeReadInformer: {
+      errors: { field: string; messages: string[] }[] | null;
+    };
+  }>(
     /* GraphQL */ `
       mutation ReadInformers($ids: [ID]!) {
         makeReadInformer(ids: $ids) {
-          errors
+          errors {
+            field
+            messages
+          }
         }
       }
     `,
@@ -99,11 +106,18 @@ export async function markInformersRead(ids: string[]) {
 
 export async function deleteInformers(ids: string[]) {
   const auth = await getApiAuth();
-  return gqlRaw<{ makeDeletedInformer: { errors: string[] } }>(
+  return gqlRaw<{
+    makeDeletedInformer: {
+      errors: { field: string; messages: string[] }[] | null;
+    };
+  }>(
     /* GraphQL */ `
       mutation DeleteInformers($ids: [ID]!) {
         makeDeletedInformer(ids: $ids) {
-          errors
+          errors {
+            field
+            messages
+          }
         }
       }
     `,

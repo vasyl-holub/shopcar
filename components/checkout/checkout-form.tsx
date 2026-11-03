@@ -18,7 +18,12 @@ import {
 } from "@/components/checkout/checkout-fields";
 import { ShopIcon } from "@/components/ui/shop-icon";
 import { buttonClasses } from "@/components/ui/button";
-import { createOrderAction, type CheckoutState } from "@/app/checkout/actions";
+import {
+  createOrderAction,
+  quickOrderAction,
+  type CheckoutState,
+} from "@/app/checkout/actions";
+import { Recaptcha } from "@/components/auth/recaptcha";
 import {
   citiesAction,
   warehousesAction,
@@ -45,6 +50,7 @@ export function CheckoutForm({
   regions,
   serviceTypes,
   shops,
+  guestSiteKey,
   defaultName,
   defaultPhone,
   defaultEmail,
@@ -58,13 +64,15 @@ export function CheckoutForm({
   serviceTypes: Choice[];
   /** Пункти самовивозу з бекенда */
   shops: Choice[];
+  /** Гість без реєстрації: ключ reCAPTCHA для замовлення в один клік */
+  guestSiteKey?: string;
   defaultName: string;
   defaultPhone: string;
   defaultEmail: string;
 }) {
   const router = useRouter();
   const [state, action, submitting] = useActionState<CheckoutState, FormData>(
-    createOrderAction,
+    guestSiteKey === undefined ? createOrderAction : quickOrderAction,
     {},
   );
   /* Змінені кількості, які ще не повернулись із сервера: id → кількість */
@@ -218,21 +226,32 @@ export function CheckoutForm({
           </p>
         </div>
         <div className="flex flex-col gap-2.5 sm:flex-row sm:justify-end sm:gap-5">
-          <Link
-            href={`/account/orders?number=${encodeURIComponent(number)}`}
-            className={buttonClasses({ className: "uppercase" })}
-          >
-            Переглянути замовлення {number}
-          </Link>
-          <Link
-            href="/account/orders"
-            className={buttonClasses({
-              variant: "outline",
-              className: "uppercase",
-            })}
-          >
-            Список замовлень
-          </Link>
+          {guestSiteKey === undefined ? (
+            <>
+              <Link
+                href={`/account/orders?number=${encodeURIComponent(number)}`}
+                className={buttonClasses({ className: "uppercase" })}
+              >
+                Переглянути замовлення {number}
+              </Link>
+              <Link
+                href="/account/orders"
+                className={buttonClasses({
+                  variant: "outline",
+                  className: "uppercase",
+                })}
+              >
+                Список замовлень
+              </Link>
+            </>
+          ) : (
+            <Link
+              href="/"
+              className={buttonClasses({ className: "uppercase" })}
+            >
+              Продовжити покупки
+            </Link>
+          )}
         </div>
       </div>
     );
@@ -325,6 +344,13 @@ export function CheckoutForm({
                 error={e.phone}
               />
             </div>
+            {guestSiteKey !== undefined && (
+              <Recaptcha
+                siteKey={guestSiteKey}
+                resetKey={state.attempt}
+                error={e.captcha}
+              />
+            )}
           </section>
         ) : (
           <>

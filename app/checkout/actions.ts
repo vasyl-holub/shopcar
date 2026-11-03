@@ -1,12 +1,14 @@
 "use server";
 
-import { gql } from "@/lib/api/graphql";
+import { gql, gqlRaw } from "@/lib/api/graphql";
 import { getCartCount } from "@/lib/api/cart";
-import { getApiAuth } from "@/lib/api/session";
+import { getApiAuth, saveSession } from "@/lib/api/session";
 import type { ApiFieldError } from "@/lib/api/auth";
 
 export type CheckoutState = {
   orderNumber?: string;
+  /** Номер спроби: скидає капчу після невдалої відправки */
+  attempt?: number;
   /** Скільки позицій лишилось у кошику після замовлення */
   cartCount?: number;
   formError?: string;
@@ -227,6 +229,107 @@ export async function createOrderAction(
     return {
       formError: `Не вдалося оформити замовлення${reason ? `: ${reason}` : ""}. Спробуйте ще раз або зателефонуйте нам.`,
       values,
+    };
+  }
+}
+
+const ADD_ORDER_QUICK = /* GraphQL */ `
+  mutation AddOrderQuick($data: QuickOrderMutationInput!) {
+    addOrderQuick(input: $data) {
+      order {
+        id
+        number
+      }
+      info
+      warnings
+      errors {
+        field
+        messages
+      }
+    }
+  }
+`;
+
+/**
+ * Замовлення в один клік для незареєстрованого: ім'я, телефон і капча.
+ * Кошик гостя живе в сесії Django, тож бекенд бере його з кук.
+ */
+export async function quickOrderAction(
+  prev: CheckoutState,
+  formData: FormData,
+): Promise<CheckoutState> {
+  const attempt = (prev.attempt ?? 0) + 1;
+  const get = (k: string) => String(formData.get(k) ?? "").trim();
+  const values = { recipient: get("recipient"), phone: get("phone") };
+  const captcha = get("captcha");
+
+  const fieldErrors: Record<string, string> = {};
+  if (!values.recipient) fieldErrors.recipient = "Вкажіть ім’я";
+  if (!values.phone) fieldErrors.phone = "Вкажіть номер телефону";
+  else if (values.phone.replace(/\D/g, "").length < 10)
+    fieldErrors.phone = "Телефон повинен містити принаймні 10 цифр";
+  if (!captcha) fieldErrors.captcha = "Підтвердіть, що ви не робот";
+  if (Object.keys(fieldErrors).length) return { fieldErrors, values, attempt };
+
+  const auth = await getApiAuth();
+  try {
+    const res = await gqlRaw<{
+      addOrderQuick: {
+        order: { id: string; number: string | null } | null;
+        info: string[] | null;
+        warnings: string[] | null;
+        errors: ApiFieldError[] | null;
+      } | null;
+    }>(ADD_ORDER_QUICK, {
+      variables: {
+        data: { name: values.recipient, phone: values.phone, captcha },
+      },
+      auth,
+    });
+    if (res.setCookie.length) await saveSession(res.setCookie);
+
+    const payload = res.data.addOrderQuick;
+    const errors = payload?.errors ?? [];
+    if (errors.length) {
+      const byField: Record<string, string> = {};
+      const other: string[] = [];
+      for (const e of errors) {
+        const text = [...new Set(e.messages)].join(" ");
+        const field = e.field === "name" ? "recipient" : e.field;
+        if (field in values || field === "captcha") byField[field] = text;
+        else other.push(text);
+      }
+      return {
+        formError: other.join(" ") || undefined,
+        fieldErrors: byField,
+        values,
+        attempt,
+      };
+    }
+
+    if (!payload?.order) {
+      const why = [...(payload?.warnings ?? []), ...(payload?.info ?? [])]
+        .filter(Boolean)
+        .join(" ");
+      return {
+        formError: `Замовлення не створено.${why ? ` ${why}` : " Перевірте, що в кошику є відмічені позиції."}`,
+        values,
+        attempt,
+      };
+    }
+
+    return {
+      orderNumber: payload.order.number ?? "—",
+      cartCount: await getCartCount(),
+      attempt,
+    };
+  } catch (error) {
+    console.error("Не вдалося оформити замовлення в один клік:", error);
+    const reason = error instanceof Error ? error.message : "";
+    return {
+      formError: `Не вдалося оформити замовлення${reason ? `: ${reason}` : ""}. Спробуйте ще раз або зателефонуйте нам.`,
+      values,
+      attempt,
     };
   }
 }

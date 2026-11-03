@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 
 import { useRouter } from "next/navigation";
 
@@ -23,6 +23,9 @@ import type { Informer } from "@/lib/api/informers";
 import { cn } from "@/lib/cn";
 
 const PER_PAGE = 20;
+
+/** Скільки лист має бути відкритим, щоб вважатися прочитаним */
+const READ_AFTER_MS = 3000;
 
 const SORTS = [
   { value: "created", label: "Дата" },
@@ -138,13 +141,19 @@ export function MessagesList({ items }: { items: Informer[] }) {
       router.refresh();
     });
 
-  /* Відкриття листа одразу позначає його прочитаним */
-
-  const show = (item: Informer) => {
+  const show = (item: Informer) =>
     setOpen((cur) => (cur === item.id ? null : item.id));
 
-    if (!item.isRead) run(readMessagesAction, [item.id]);
-  };
+  /* Непрочитаний лист, який відкритий понад 3 секунди, позначаємо прочитаним:
+     миттєве закриття означає, що його не встигли прочитати */
+  const openUnread = items.find((i) => i.id === open && !i.isRead)?.id;
+  useEffect(() => {
+    if (!openUnread) return;
+    const timer = setTimeout(() => {
+      void readMessagesAction([openUnread]).then(() => router.refresh());
+    }, READ_AFTER_MS);
+    return () => clearTimeout(timer);
+  }, [openUnread, router]);
 
   if (items.length === 0) {
     return (
