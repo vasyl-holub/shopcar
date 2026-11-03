@@ -227,9 +227,11 @@ function useSection(
 function PersonalSection({
   profile,
   userTypeLabel,
+  canChangeEmail,
 }: {
   profile: Profile;
   userTypeLabel: string;
+  canChangeEmail: boolean;
 }) {
   const { state, formAction, pending, open, setEditing, cancel } =
     useSection(savePersonalAction);
@@ -298,7 +300,7 @@ function PersonalSection({
         <Row
           label="Email:"
           value={profile.email}
-          editing={open}
+          editing={open && canChangeEmail}
           error={e.email}
         >
           <TextInput
@@ -555,6 +557,7 @@ function PasswordSection() {
  */
 export function ProfileSections({
   profile,
+  canChangeEmail,
   userTypeLabel,
   countries,
   regions,
@@ -562,6 +565,8 @@ export function ProfileSections({
   deliveries,
 }: {
   profile: Profile;
+  /** Бекенд дозволяє клієнту міняти email (canUserChangeEmail) */
+  canChangeEmail: boolean;
   userTypeLabel: string;
   countries: Choice[];
   regions: Choice[];
@@ -571,7 +576,11 @@ export function ProfileSections({
   return (
     <div className="flex flex-col gap-[50px]">
       <div className="grid gap-[50px] lg:grid-cols-2 lg:gap-x-[100px]">
-        <PersonalSection profile={profile} userTypeLabel={userTypeLabel} />
+        <PersonalSection
+          profile={profile}
+          userTypeLabel={userTypeLabel}
+          canChangeEmail={canChangeEmail}
+        />
         <DeliverySection
           profile={profile}
           countries={countries}

@@ -125,6 +125,25 @@ type ProfileResponse = {
   } | null;
 };
 
+/**
+ * Чи дозволено клієнту змінювати свій email (налаштування бекенда
+ * ALLOW_USER_CHANGE_EMAIL). Якщо запит не вдався, не забороняємо:
+ * остаточне рішення однаково за бекендом.
+ */
+export async function canChangeEmail(): Promise<boolean> {
+  const auth = await getApiAuth();
+  if (!auth) return false;
+  try {
+    const data = await gql<{ canUserChangeEmail: boolean | null }>(
+      `query CanChangeEmail { canUserChangeEmail }`,
+      { auth },
+    );
+    return data.canUserChangeEmail !== false;
+  } catch {
+    return true;
+  }
+}
+
 export async function getProfile(): Promise<Profile | null> {
   const auth = await getApiAuth();
   if (!auth) return null;

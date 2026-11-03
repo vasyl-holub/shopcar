@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { GraphQLRequestError } from "@/lib/api/graphql";
-import { updateProfileFields } from "@/lib/api/account";
+import { canChangeEmail, updateProfileFields } from "@/lib/api/account";
 import type { AccountFormState } from "@/app/account/actions";
 
 const field = (data: FormData, key: string) =>
@@ -55,12 +55,17 @@ export async function savePersonalAction(
     email: field(data, "email"),
   };
 
+  /* Заборонену зміну email не віддаємо навіть підробленою формою */
+  const emailEditable = await canChangeEmail();
+
   const fieldErrors: Record<string, string> = {};
   const parts = values.fio.split(/\s+/).filter(Boolean);
   if (parts.length < 2) fieldErrors.fio = "Вкажіть прізвище та ім’я";
-  if (!values.email) fieldErrors.email = "Вкажіть email";
-  else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email))
-    fieldErrors.email = "Введіть коректну email адресу";
+  if (emailEditable) {
+    if (!values.email) fieldErrors.email = "Вкажіть email";
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email))
+      fieldErrors.email = "Введіть коректну email адресу";
+  }
   if (values.phone && values.phone.replace(/\D/g, "").length < 10)
     fieldErrors.phone = "Телефон повинен містити принаймні 10 цифр";
   if (Object.keys(fieldErrors).length) return { fieldErrors, values };
@@ -71,7 +76,7 @@ export async function savePersonalAction(
       firstName: parts[1],
       fatherName: parts.slice(2).join(" "),
       company: values.company,
-      email: values.email,
+      ...(emailEditable && { email: values.email }),
       ...(values.phone && { phone: [values.phone] }),
       ...(values.birthday && { birthday: values.birthday }),
     },

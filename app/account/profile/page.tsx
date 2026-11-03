@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
 import { ProfileSections } from "@/components/account/profile-sections";
-import { getProfile, getUserTypeLabels } from "@/lib/api/account";
+import {
+  canChangeEmail,
+  getProfile,
+  getUserTypeLabels,
+} from "@/lib/api/account";
 import { getOrderOptions } from "@/lib/api/cart";
 import { profileOptionsAction } from "@/app/account/profile-details-action";
 
@@ -10,12 +14,14 @@ export const metadata: Metadata = {
 };
 
 export default async function ProfilePage() {
-  const [profile, options, orderOptions, typeLabels] = await Promise.all([
-    getProfile(),
-    profileOptionsAction(),
-    getOrderOptions(),
-    getUserTypeLabels(),
-  ]);
+  const [profile, options, orderOptions, typeLabels, emailEditable] =
+    await Promise.all([
+      getProfile(),
+      profileOptionsAction(),
+      getOrderOptions(),
+      getUserTypeLabels(),
+      canChangeEmail(),
+    ]);
 
   if (!profile) {
     return (
@@ -28,6 +34,7 @@ export default async function ProfilePage() {
   return (
     <ProfileSections
       profile={profile}
+      canChangeEmail={emailEditable}
       userTypeLabel={typeLabels[String(profile.userType)] ?? ""}
       countries={options.countries}
       regions={options.regions}
