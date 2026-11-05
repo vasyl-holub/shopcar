@@ -68,6 +68,8 @@ export async function createOrderAction(
     phone: get("phone"),
     address: get("address"),
     shop: get("shop"),
+    shopName: get("shopName"),
+    assemblyPoint: get("assemblyPoint"),
     comment: get("comment"),
     car: get("car"),
     /* «Нова пошта»: тип, область, місто (назва й код) і відділення */
@@ -122,7 +124,7 @@ export async function createOrderAction(
       ? `Замовник: ${values.recipient}, ${values.phone}`
       : "";
 
-  const city = np ? values.npCityName : values.shop;
+  const city = np ? values.npCityName : values.shopName;
   const address = np
     ? toDoor
       ? values.address
@@ -149,7 +151,7 @@ export async function createOrderAction(
   /* Окремого поля для автомобіля бекенд не має — дописуємо до коментаря */
   const comment = [
     npDetails && `Нова пошта: ${npDetails}`,
-    values.shop && `Пункт збирання: ${values.shop}`,
+    values.shop && `Пункт збирання: ${values.shopName}`,
     values.car && `Автомобіль: ${values.car}`,
     orderedBy,
     values.comment,
@@ -163,6 +165,7 @@ export async function createOrderAction(
     recipient,
     phone,
     ...(city && { city }),
+    ...(values.assemblyPoint && { assemblyPoint: values.assemblyPoint }),
     ...(address && { address }),
     ...(warehouseNumber && { deliveryInfo: warehouseNumber }),
     ...(comment && { comment }),

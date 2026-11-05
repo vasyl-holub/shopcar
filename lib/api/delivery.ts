@@ -161,7 +161,7 @@ export async function getPickupStores(): Promise<Choice[]> {
           s.name?.trim() &&
           !HIDDEN_PICKUP_STORES.has(Number(s.number)),
       )
-      .map((s) => ({ value: s.name!.trim(), label: s.name!.trim() }));
+      .map((s) => ({ value: s.id, label: s.name!.trim() }));
   } catch {
     return [];
   }

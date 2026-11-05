@@ -270,6 +270,8 @@ export type OrderOption = {
   note?: string;
   /** Самовивіз: для нього не потрібні адреса й перевізник */
   selfPickup?: boolean;
+  /** Власна точка збору доставки: замовлення мусить збігатися з нею */
+  assemblyPoint?: string;
 };
 
 /** Перший рядок HTML-опису без тегів: до першого <br> чи кінця абзацу */
@@ -292,6 +294,9 @@ const ORDER_OPTIONS = /* GraphQL */ `
         name
         description
         selfPickup
+        assemblyPoint {
+          id
+        }
       }
     }
     payMethodAll {
@@ -316,6 +321,7 @@ export async function getOrderOptions(): Promise<{
           name: string | null;
           description: string | null;
           selfPickup: boolean | null;
+          assemblyPoint: { id: string } | null;
         }[];
       };
       payMethodAll: { edges: { id: string; name: string | null }[] };
@@ -332,6 +338,7 @@ export async function getOrderOptions(): Promise<{
           name: x.name!,
           note: firstLine(x.description),
           selfPickup: Boolean(x.selfPickup),
+          assemblyPoint: x.assemblyPoint?.id,
         })),
       payMethods: clean(data.payMethodAll.edges),
     };

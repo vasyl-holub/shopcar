@@ -427,6 +427,18 @@ export function CheckoutForm({
                   {note}
                 </p>
               )}
+              {/* Точка збору замовлення: пункт самовивозу або власна точка
+                  перевізника — бекенд відхиляє те, що з нею не збігається */}
+              <input
+                type="hidden"
+                name="assemblyPoint"
+                value={pickup ? shop : (chosen?.assemblyPoint ?? "")}
+              />
+              <input
+                type="hidden"
+                name="shopName"
+                value={shops.find((s) => s.value === shop)?.label ?? ""}
+              />
               {isNp ? (
                 <>
                   <input type="hidden" name="isNp" value="1" />
