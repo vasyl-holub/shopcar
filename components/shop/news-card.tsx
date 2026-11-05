@@ -20,7 +20,7 @@ function plain(html: string | null) {
 
 export function NewsCard({ item }: { item: ArticleListItem }) {
   const href = `/blog/${item.slug}`;
-  const image = mediaUrl(articleImageUrl(item.image));
+  const image = mediaUrl(articleImageUrl(item.image), { keepHost: true });
   const text = plain(item.textShort);
 
   return (

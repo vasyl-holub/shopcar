@@ -26,12 +26,16 @@ export type GraphQLErrorItem = {
  * Бекенд віддає то абсолютні посилання, то шляхи від кореня (/media/...),
  * а в іменах файлів трапляється кирилиця — її треба закодувати.
  */
-export function mediaUrl(path?: string | null) {
+export function mediaUrl(
+  path?: string | null,
+  { keepHost = false }: { keepHost?: boolean } = {},
+) {
   if (!path) return null;
   const full = /^https?:\/\//i.test(path)
     ? path
     : `${new URL(ENDPOINT).origin}${path.startsWith("/") ? "" : "/"}${path}`;
   /* Файли з /media лежать на публічному домені; на manage частини немає */
+  if (keepHost) return encodeURI(full);
   return encodeURI(
     full.replace(
       /^https?:\/\/manage\.shopcar\.ua\/media\//i,

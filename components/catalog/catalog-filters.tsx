@@ -222,7 +222,8 @@ export function CatalogFilters({
   const go = (query: URLSearchParams) => {
     query.delete("page");
     const qs = query.toString();
-    router.push(qs ? `${pathname}?${qs}` : pathname);
+    /* scroll: false — фільтр не повинен кидати сторінку нагору */
+    router.push(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
   };
 
   const toggleBrand = (id: string) => {

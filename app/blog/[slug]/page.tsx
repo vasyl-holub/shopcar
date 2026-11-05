@@ -58,7 +58,7 @@ export default async function ArticlePage({
 
   if (!article) notFound();
 
-  const cover = mediaUrl(articleImageUrl(article.image));
+  const cover = mediaUrl(articleImageUrl(article.image), { keepHost: true });
   const date = formatDotDate(article.created);
 
   /* Короткий опис показуємо вступом, але лише якщо він змістовний:

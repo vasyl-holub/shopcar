@@ -54,7 +54,7 @@ export function CatalogListing({
     query.set("sort", key);
     if (desc) query.set("dir", "desc");
     else query.delete("dir");
-    router.push(`${pathname}?${query.toString()}`);
+    router.push(`${pathname}?${query.toString()}`, { scroll: false });
   };
 
   return (

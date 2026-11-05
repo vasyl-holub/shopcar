@@ -24,7 +24,7 @@ function excerpt(text: string | null) {
  * Уся картка клікабельна через посилання в заголовку.
  */
 export function ArticleCard({ article }: { article: ArticleListItem }) {
-  const cover = mediaUrl(articleImageUrl(article.image));
+  const cover = mediaUrl(articleImageUrl(article.image), { keepHost: true });
   const text = excerpt(article.textShort);
 
   return (
