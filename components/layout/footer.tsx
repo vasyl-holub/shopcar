@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { site, socials } from "@/lib/site";
 import { getSiteKey } from "@/lib/api/auth";
+import { getMessengers } from "@/lib/api/messengers";
 import { Container } from "@/components/ui/container";
 import { ShopIcon } from "@/components/ui/shop-icon";
 import { SectionLine, SectionTitle } from "@/components/shop/section-heading";
@@ -28,7 +29,10 @@ const socialIcons = [
 const subheading = "text-[16px] font-semibold leading-[1.5]";
 
 export async function Footer() {
-  const siteKey = await getSiteKey();
+  const [siteKey, messengers] = await Promise.all([
+    getSiteKey(),
+    getMessengers(),
+  ]);
 
   return (
     <footer className="mt-12 pb-[30px] lg:mt-20">
@@ -73,32 +77,20 @@ export async function Footer() {
             <div className="flex flex-col gap-10 lg:justify-center">
               <div className="flex flex-col gap-2.5 lg:gap-[18px]">
                 <h3 className={subheading}>Соціальні мережі</h3>
-                <div className="flex gap-1 lg:gap-[18px]">
-                  {[
-                    {
-                      icon: "telegram",
-                      label: "Telegram",
-                      href: site.telegram,
-                    },
-                    { icon: "viber", label: "Viber", href: site.viber },
-                    {
-                      icon: "whatsapp",
-                      label: "WhatsApp",
-                      href: site.whatsapp,
-                    },
-                  ].map((s) => (
-                    <a
-                      key={s.label}
-                      href={s.href}
-                      aria-label={s.label}
-                      className="flex size-10 items-center justify-center transition-opacity hover:opacity-80 lg:size-6"
-                    >
-                      <ShopIcon
-                        name={s.icon as "telegram" | "viber" | "whatsapp"}
-                      />
-                    </a>
-                  ))}
-                </div>
+                {messengers.length > 0 && (
+                  <div className="flex gap-1 lg:gap-[18px]">
+                    {messengers.map((m) => (
+                      <a
+                        key={m.name}
+                        href={m.href}
+                        aria-label={m.label}
+                        className="flex size-10 items-center justify-center transition-opacity hover:opacity-80 lg:size-6"
+                      >
+                        <ShopIcon name={m.name} />
+                      </a>
+                    ))}
+                  </div>
+                )}
                 <div className="flex gap-1 lg:-mt-1.5 lg:gap-0">
                   {socialIcons.map((s) => (
                     <a

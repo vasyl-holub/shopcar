@@ -72,6 +72,70 @@ type BrandsResponse = {
   };
 };
 
+export type CatalogTreeNode = CategoryNode & { children: CatalogTreeNode[] };
+
+const CATALOG_TREE = /* GraphQL */ `
+  query CatalogTree {
+    productGroupAll(level: 0) {
+      edges {
+        slug
+        name
+        isActive
+        children {
+          edges {
+            slug
+            name
+            isActive
+            children {
+              edges {
+                slug
+                name
+                isActive
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+`;
+
+type TreeEdge = {
+  slug: string | null;
+  name: string | null;
+  isActive: boolean | null;
+  children?: { edges: TreeEdge[] } | null;
+};
+
+/**
+ * Дерево каталогу до трьох рівнів для меню «Каталог»: бекенд віддає його
+ * одним запитом (близько 10 КБ), тож підкатегорії відкриваються миттєво.
+ */
+export async function getCatalogTree(): Promise<CatalogTreeNode[]> {
+  const build = (edges: TreeEdge[] | undefined): CatalogTreeNode[] =>
+    (edges ?? [])
+      .filter((c) => c.isActive !== false && c.slug && c.name?.trim())
+      .map((c) => ({
+        id: c.slug!,
+        slug: c.slug!,
+        name: c.name!.trim(),
+        children: build(c.children?.edges),
+      }));
+
+  try {
+    const data = await gql<{ productGroupAll: { edges: TreeEdge[] } }>(
+      CATALOG_TREE,
+      { revalidate: REVALIDATE, tags: ["catalog-categories"] },
+    );
+    /* «Каталог» — службова група верхнього рівня, у макеті її немає */
+    return build(data.productGroupAll.edges).filter(
+      (c) => c.name.toLowerCase() !== "каталог",
+    );
+  } catch {
+    return [];
+  }
+}
+
 /** Групи товарів верхнього рівня. Порожній масив, якщо API недоступний */
 export async function getCatalogCategories(): Promise<CatalogCategory[]> {
   try {

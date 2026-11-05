@@ -199,7 +199,10 @@ function OfferLine({
 }) {
   const store = offer.store;
   const days = offer.deliveryDays ?? "—";
+  /* Закреслюємо роздрібну ціну лише за справжньої знижки: персональна
+     ціна клієнта нижча від роздрібної завжди, і це не знижка */
   const discounted =
+    offer.onDiscount &&
     offer.retailPrice != null &&
     offer.price != null &&
     offer.retailPrice > offer.price;

@@ -166,6 +166,7 @@ export async function getCart({
   try {
     const list = await gql<CartListResponse>(CART_LIST, {
       auth,
+      inUah: true,
       /* Кошик персональний і змінюється щохвилини — не кешуємо */
     });
 
@@ -174,6 +175,7 @@ export async function getCart({
 
     const data = await gql<CartItemsResponse>(CART_ITEMS, {
       auth,
+      inUah: true,
       variables: { cartId: cart.id },
     });
 

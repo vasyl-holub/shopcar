@@ -11,6 +11,8 @@ export type ShopIconName =
   | "chevron-down-orange"
   | "chevron-left"
   | "chevron-right"
+  | "chevron-right-dark"
+  | "chevron-right-sm"
   | "clock"
   | "phone"
   | "arrow-right"

@@ -90,7 +90,7 @@ export async function offerInfoAction(id: string): Promise<OfferInfo | null> {
           } | null;
         } | null;
       } | null;
-    }>(OFFER, { variables: { id }, auth });
+    }>(OFFER, { variables: { id }, auth, inUah: true });
 
     const o = data.storeItemNode;
     if (!o?.product) return null;

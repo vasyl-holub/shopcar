@@ -8,6 +8,9 @@ import { buttonClasses } from "@/components/ui/button";
 import { PartRequestButton } from "@/components/requests/part-request-modal";
 import { AdvancedSearchButton } from "@/components/search/advanced-search-modal";
 import { schedule, site, topNav } from "@/lib/site";
+import { CatalogDrawer } from "@/components/layout/catalog-drawer";
+import type { CatalogTreeNode } from "@/lib/api/catalog";
+import type { Messenger } from "@/lib/api/messengers";
 import type { CurrencyRate } from "@/lib/api/currency";
 import { cn } from "@/lib/cn";
 
@@ -30,7 +33,15 @@ function SmallIcon({ name }: { name: "phone-sm" | "clock-sm" }) {
 const navItem =
   "flex items-center p-2 text-[16px] leading-[1.5] transition-colors hover:text-orange";
 
-export function MobileMenu({ rates }: { rates: CurrencyRate[] }) {
+export function MobileMenu({
+  rates,
+  catalog,
+  messengers,
+}: {
+  rates: CurrencyRate[];
+  catalog: CatalogTreeNode[];
+  messengers: Messenger[];
+}) {
   /* mounted — панель у DOM, shown — панель у відкритому стані.
      Два стани потрібні, щоб анімація встигла програтися і на закритті:
      спершу знімаємо shown, і аж після переходу прибираємо з DOM. */
@@ -142,16 +153,16 @@ export function MobileMenu({ rates }: { rates: CurrencyRate[] }) {
               )}
 
               <div className="flex flex-col gap-[15px]">
-                <Link
-                  href="/brands"
-                  onClick={close}
+                <CatalogDrawer
+                  tree={catalog}
+                  onNavigate={close}
                   className={buttonClasses({
                     className: "w-full justify-start px-5",
                   })}
                 >
                   <ShopIcon name="view-list" />
                   КАТАЛОГ
-                </Link>
+                </CatalogDrawer>
                 <PartRequestButton
                   className={buttonClasses({
                     className: "w-full justify-start px-5",
@@ -208,32 +219,20 @@ export function MobileMenu({ rates }: { rates: CurrencyRate[] }) {
                         {p.label}
                       </a>
                     ))}
-                    <span className="flex items-center gap-2.5 p-2.5">
-                      {[
-                        {
-                          name: "telegram",
-                          label: "Telegram",
-                          href: site.telegram,
-                        },
-                        { name: "viber", label: "Viber", href: site.viber },
-                        {
-                          name: "whatsapp",
-                          label: "WhatsApp",
-                          href: site.whatsapp,
-                        },
-                      ].map((m) => (
-                        <a
-                          key={m.name}
-                          href={m.href}
-                          aria-label={m.label}
-                          className="flex size-10 items-center justify-center"
-                        >
-                          <ShopIcon
-                            name={m.name as "telegram" | "viber" | "whatsapp"}
-                          />
-                        </a>
-                      ))}
-                    </span>
+                    {messengers.length > 0 && (
+                      <span className="flex items-center gap-2.5 p-2.5">
+                        {messengers.map((m) => (
+                          <a
+                            key={m.name}
+                            href={m.href}
+                            aria-label={m.label}
+                            className="flex size-10 items-center justify-center"
+                          >
+                            <ShopIcon name={m.name} />
+                          </a>
+                        ))}
+                      </span>
+                    )}
                   </div>
                 </div>
 

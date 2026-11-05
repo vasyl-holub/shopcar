@@ -344,6 +344,30 @@ export function CheckoutForm({
                 error={e.phone}
               />
             </div>
+            {/* Доставку призначає менеджер, але самовивіз без точки збору
+                бекенд не приймає — тож пункт вибирає сам клієнт */}
+            {guestSiteKey === undefined && shops.length > 0 && (
+              <>
+                <input type="hidden" name="assemblyPoint" value={shop} />
+                <input
+                  type="hidden"
+                  name="shopName"
+                  value={shops.find((s) => s.value === shop)?.label ?? ""}
+                />
+                <UnderlineSelect
+                  name="shop"
+                  label="Пункт збирання"
+                  required
+                  value={shop}
+                  onChange={(next) => {
+                    clear("shop");
+                    setShop(next);
+                  }}
+                  options={shops}
+                  error={e.shop}
+                />
+              </>
+            )}
             {guestSiteKey !== undefined && (
               <Recaptcha
                 siteKey={guestSiteKey}

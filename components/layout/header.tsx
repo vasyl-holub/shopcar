@@ -3,8 +3,12 @@ import Link from "next/link";
 import { schedule, site, topNav } from "@/lib/site";
 import { getProfile } from "@/lib/api/account";
 import { getCurrencyRates } from "@/lib/api/currency";
+import { getCatalogTree } from "@/lib/api/catalog";
+import { getMessengers } from "@/lib/api/messengers";
 import { HeaderSearch } from "@/components/search/header-search";
 import { MobileMenu } from "@/components/layout/mobile-menu";
+import { CatalogMegaMenu } from "@/components/layout/catalog-mega-menu";
+import type { CatalogTreeNode } from "@/lib/api/catalog";
 import { GarageButton } from "@/components/garage/garage-modal";
 import { FavoritesButton } from "@/components/favorites/favorites-modal";
 import { LoginButton } from "@/components/auth/login-modal";
@@ -91,20 +95,26 @@ function DropdownLabel({
 }
 
 /** Три помаранчеві кнопки шапки: каталог, підбір, розширений пошук */
-function HeaderActions({ variant }: { variant: "inline" | "grid" }) {
+function HeaderActions({
+  variant,
+  catalog,
+}: {
+  variant: "inline" | "grid";
+  catalog: CatalogTreeNode[];
+}) {
   const fit = variant === "grid" ? "w-full justify-center" : "justify-start";
 
   return (
     <>
-      <Link
-        href="/brands"
+      <CatalogMegaMenu
+        tree={catalog}
         className={buttonClasses({
           className: `${fit} ${variant === "inline" ? "min-w-0 flex-1" : ""}`,
         })}
       >
         <ShopIcon name="view-list" />
         КАТАЛОГ
-      </Link>
+      </CatalogMegaMenu>
       <PartRequestButton className={buttonClasses({ className: fit })}>
         <ShopIcon name="cog" />
         ПІДБЕРІТЬ МЕНІ ДЕТАЛЬ
@@ -118,9 +128,11 @@ function HeaderActions({ variant }: { variant: "inline" | "grid" }) {
 }
 
 export async function Header() {
-  const [profile, rates] = await Promise.all([
+  const [profile, rates, catalog, messengers] = await Promise.all([
     getProfile(),
     getCurrencyRates(),
+    getCatalogTree(),
+    getMessengers(),
   ]);
 
   const initials = profile
@@ -197,24 +209,20 @@ export async function Header() {
                       {p.label}
                     </a>
                   ))}
-                  <span className="flex items-center justify-center gap-[34px] p-2.5">
-                    {(
-                      [
-                        ["telegram", site.telegram, "Telegram"],
-                        ["viber", site.viber, "Viber"],
-                        ["whatsapp", site.whatsapp, "WhatsApp"],
-                      ] as const
-                    ).map(([icon, href, label]) => (
-                      <a
-                        key={icon}
-                        href={href}
-                        aria-label={label}
-                        className="transition-opacity hover:opacity-70"
-                      >
-                        <ShopIcon name={icon} />
-                      </a>
-                    ))}
-                  </span>
+                  {messengers.length > 0 && (
+                    <span className="flex items-center justify-center gap-[34px] p-2.5">
+                      {messengers.map((m) => (
+                        <a
+                          key={m.name}
+                          href={m.href}
+                          aria-label={m.label}
+                          className="transition-opacity hover:opacity-70"
+                        >
+                          <ShopIcon name={m.name} />
+                        </a>
+                      ))}
+                    </span>
+                  )}
                 </>
               }
             >
@@ -260,7 +268,7 @@ export async function Header() {
         <div className="flex min-w-0 max-w-[800px] flex-1 flex-col gap-[15px]">
           <HeaderSearch className="w-full" />
           <div className="hidden items-center gap-5 min-[1440px]:flex">
-            <HeaderActions variant="inline" />
+            <HeaderActions variant="inline" catalog={catalog} />
           </div>
         </div>
 
@@ -283,7 +291,7 @@ export async function Header() {
       {/* Від 1024 до 1280 три кнопки не вміщаються поруч із пошуком, тому
           стоять окремим рядом на всю ширину */}
       <div className="mx-auto hidden max-w-[1440px] grid-cols-3 gap-2.5 px-10 pb-6 lg:max-[1440px]:grid">
-        <HeaderActions variant="grid" />
+        <HeaderActions variant="grid" catalog={catalog} />
       </div>
 
       {/* ------------------------------------------ Планшет і мобільний */}
@@ -304,7 +312,11 @@ export async function Header() {
 
         <div className="flex flex-wrap items-center gap-x-2.5 gap-y-2.5 px-2.5 md:flex-nowrap md:gap-x-5">
           <div className="flex shrink-0 items-center gap-2.5">
-            <MobileMenu rates={rates.slice(0, 3)} />
+            <MobileMenu
+              rates={rates.slice(0, 3)}
+              catalog={catalog}
+              messengers={messengers}
+            />
             <Link href="/" aria-label={`${site.name} — головна`}>
               <Image
                 src="/shop/img/logo.png"

@@ -1,13 +1,15 @@
 import { gql } from "@/lib/api/graphql";
 import { getApiAuth } from "@/lib/api/session";
-import { queryVariants } from "@/lib/search";
+import { queryVariants, stripSeparators } from "@/lib/search";
 
 /** Пропозиція складу. `id` — саме те, що приймає addCartItem */
 export type ProductOffer = {
   id: string;
   price: number | null;
-  /** Роздрібна ціна (priceOut): показуємо закресленою, коли персональна нижча */
+  /** Роздрібна ціна (priceOut): лише в підказці; закресленою — тільки за знижки */
   retailPrice: number | null;
+  /** Є знижка на цей склад (isProductDiscount): тоді роздрібна ціна закреслена */
+  onDiscount: boolean;
   /** Персональні знижки клієнта для підказки над ціною */
   discounts: { name: string; price: number }[];
   /** Залишок на складі */
@@ -87,6 +89,7 @@ type RawOffer = {
   priceOut: number | null;
   /** Ціна саме для цього користувача: з урахуванням його знижки */
   priceUser: number | null;
+  isProductDiscount?: boolean | null;
   count: number | null;
   deliveryDaysHumanize: string | null;
   canBuy: boolean | null;
@@ -186,6 +189,7 @@ const PRODUCT = /* GraphQL */ `
         id
         priceOut
         priceUser
+        isProductDiscount
         count
         deliveryDaysHumanize
         minDeliveryDay
@@ -218,6 +222,7 @@ const PRODUCT = /* GraphQL */ `
           id
           priceOut
           priceUser
+          isProductDiscount
           count
           deliveryDaysHumanize
           minDeliveryDay
@@ -281,6 +286,7 @@ const PRODUCT = /* GraphQL */ `
               id
               priceOut
               priceUser
+              isProductDiscount
               count
               deliveryDaysHumanize
               minDeliveryDay
@@ -349,6 +355,7 @@ function toOffer(raw: RawOffer): ProductOffer {
     id: raw.id,
     price: raw.priceUser ?? raw.priceOut,
     retailPrice: raw.priceOut ?? null,
+    onDiscount: Boolean(raw.isProductDiscount),
     discounts: (raw.discountPrices ?? [])
       .filter((d) => d.discountName && d.price != null)
       .map((d) => ({ name: d.discountName!, price: d.price! })),
@@ -390,7 +397,11 @@ export async function getProduct(id: string): Promise<Product | null> {
   let data: Response;
   try {
     /* Ціни персональні — залежать від типу клієнта, тому не кешуємо */
-    data = await gql<Response>(PRODUCT, { variables: { id }, auth });
+    data = await gql<Response>(PRODUCT, {
+      variables: { id },
+      auth,
+      inUah: true,
+    });
   } catch {
     return null;
   }
@@ -542,6 +553,7 @@ const PROMO_PRODUCTS = /* GraphQL */ `
           id
           priceOut
           priceUser
+          isProductDiscount
           priceUser
           count
           deliveryDaysHumanize
@@ -562,6 +574,7 @@ export async function getPromoProducts(
     const data = await gql<ListResponse>(PROMO_PRODUCTS, {
       variables: { perPage },
       auth,
+      inUah: true,
     });
 
     return data.promoProductAll.edges.map((p) => ({
@@ -576,7 +589,8 @@ export async function getPromoProducts(
       offerId: p.price?.id ?? null,
       price: p.price?.priceUser ?? p.price?.priceOut ?? null,
       oldPrice:
-        p.price?.priceUser != null &&
+        p.price?.isProductDiscount &&
+        p.price.priceUser != null &&
         p.price.priceOut != null &&
         p.price.priceOut > p.price.priceUser
           ? p.price.priceOut
@@ -692,6 +706,7 @@ function groupProductsQuery(opts: GroupProductsOptions) {
             id
             priceOut
             priceUser
+            isProductDiscount
             count
             deliveryDaysHumanize
             canBuy
@@ -732,6 +747,7 @@ export async function getProductsByGroup(
         ...(hasAttributes(opts) ? { attributes: opts.attributes } : {}),
       },
       auth,
+      inUah: true,
     });
 
     return {
@@ -760,7 +776,8 @@ export async function getProductsByGroup(
         offerId: p.price?.id ?? null,
         price: p.price?.priceUser ?? p.price?.priceOut ?? null,
         oldPrice:
-          p.price?.priceUser != null &&
+          p.price?.isProductDiscount &&
+          p.price.priceUser != null &&
           p.price.priceOut != null &&
           p.price.priceOut > p.price.priceUser
             ? p.price.priceOut
@@ -792,6 +809,7 @@ const CAR_PRODUCTS = /* GraphQL */ `
           id
           priceOut
           priceUser
+          isProductDiscount
           priceUser
           count
           deliveryDaysHumanize
@@ -814,6 +832,7 @@ export async function getProductsBySimpleCar(
     const data = await gql<GroupListResponse>(CAR_PRODUCTS, {
       variables: { simpleCarId, page, perPage },
       auth,
+      inUah: true,
     });
 
     return {
@@ -856,6 +875,7 @@ const SEARCH_PRODUCTS = /* GraphQL */ `
           id
           priceOut
           priceUser
+          isProductDiscount
           priceUser
           count
           deliveryDaysHumanize
@@ -879,12 +899,19 @@ export async function searchProducts(
   page = 1,
   perPage = 24,
 ): Promise<{ items: ProductListItem[]; total: number; corrected?: string }> {
-  const found = await queryProducts(query, page, perPage);
+  /* Спершу артикул без пробілів і дефісів («1 457 429 118» → 1457429118);
+     якщо так нічого немає, пробуємо запит як є — раптом дефіс частина номера */
+  const clean = stripSeparators(query);
+  let found = await queryProducts(clean || query, page, perPage);
   if (found.total > 0) return found;
+  if (clean && clean !== query.trim()) {
+    found = await queryProducts(query, page, perPage);
+    if (found.total > 0) return found;
+  }
 
   /* Артикул, набраний кирилицею: або двійники латиниці («СХ010» з
      кириличними С і Х), або не та розкладка («щс0002в» замість «OC0002D») */
-  for (const corrected of queryVariants(query)) {
+  for (const corrected of queryVariants(clean || query)) {
     const retry = await queryProducts(corrected, page, perPage);
     if (retry.total > 0) return { ...retry, corrected };
   }
@@ -905,6 +932,7 @@ async function queryProducts(
     const data = await gql<GroupListResponse>(SEARCH_PRODUCTS, {
       variables: { num, page, perPage },
       auth,
+      inUah: true,
     });
 
     return {

@@ -36,6 +36,7 @@ type RawProduct = {
     id: string;
     priceOut: number | null;
     priceUser: number | null;
+    isProductDiscount?: boolean | null;
     count: number | null;
     canBuy: boolean | null;
   } | null;
@@ -55,6 +56,7 @@ const FIELDS = /* GraphQL */ `
     id
     priceOut
     priceUser
+    isProductDiscount
     count
     canBuy
   }
@@ -103,7 +105,10 @@ function toItem(p: RawProduct): ProductListItem {
     offerId: p.price?.id ?? null,
     price: priceUser ?? priceOut,
     oldPrice:
-      priceUser != null && priceOut != null && priceOut > priceUser
+      p.price?.isProductDiscount &&
+      priceUser != null &&
+      priceOut != null &&
+      priceOut > priceUser
         ? priceOut
         : null,
     count: p.price?.count ?? null,
@@ -164,6 +169,7 @@ export async function searchCatalog(
         }>(GROUP_PRODUCTS, {
           variables: { groups, page, perPage: SCAN_PAGE },
           auth,
+          inUah: true,
         });
         candidates = candidates.concat(data.productAll.edges);
         if (page * SCAN_PAGE >= data.productAll.totalCount) break;
@@ -177,6 +183,7 @@ export async function searchCatalog(
       }>(GLOBAL_SEARCH, {
         variables: { query: name || num || cross || ean },
         auth,
+        inUah: true,
       });
       const seen = new Set<string>();
       for (const p of [

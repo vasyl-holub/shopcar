@@ -65,6 +65,16 @@ const LAYOUT: Record<string, string> = {
   ґ: "\\",
 };
 
+/**
+ * Артикул без роздільників: «1 457 429 118», «1457-429-118», «A 000.123»
+ * зберігаються в базі суцільним рядком, і з пробілами чи дефісами точний
+ * пошук нічого не знаходить. Прибираємо пробіли (зокрема нерозривні) й
+ * знаки між групами цифр.
+ */
+export function stripSeparators(text: string) {
+  return text.replace(/[\s \-–—_./\,]+/g, "");
+}
+
 /** Чи є в запиті кирилиця */
 export function hasCyrillic(text: string) {
   return /[\u0400-\u04FF]/.test(text);

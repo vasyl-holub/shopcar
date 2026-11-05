@@ -7,6 +7,8 @@
  *    тож фронту не обов'язково жити на піддомені westpart.ua.
  */
 
+import { getPriceRate, scaleMoney } from "@/lib/api/price-rate";
+
 /* Django віддає 301 на адресу без слеша, а fetch, ідучи за редіректом,
    губить тіло POST — бекенд відповідає «Must provide query». Тому слеш
    дописуємо самі, щоб помилка в змінній середовища не ламала весь сайт. */
@@ -79,6 +81,11 @@ type RequestOptions = {
    * у самих змінних на цьому місці має стояти null.
    */
   uploads?: { path: string; file: File }[];
+  /**
+   * Ціни у відповіді привести до гривні. Бекенд віддає їх у валюті
+   * відвідувача (гостю — у євро), а сайт підписує все як «грн».
+   */
+  inUah?: boolean;
 };
 
 export type RawResult<T> = {
@@ -126,7 +133,15 @@ function readSetCookie(res: Response): string[] {
 /** Запит із доступом до Set-Cookie — потрібен для логіну й реєстрації */
 export async function gqlRaw<T>(
   query: string,
-  { variables, auth, revalidate, tags, signal, uploads }: RequestOptions = {},
+  {
+    variables,
+    auth,
+    revalidate,
+    tags,
+    signal,
+    uploads,
+    inUah,
+  }: RequestOptions = {},
 ): Promise<RawResult<T>> {
   let body: BodyInit = JSON.stringify({ query, variables });
   if (uploads?.length) {
@@ -222,7 +237,9 @@ export async function gqlRaw<T>(
     }
   }
 
-  return { data: json.data, setCookie: readSetCookie(res) };
+  const data = inUah ? scaleMoney(json.data, await getPriceRate()) : json.data;
+
+  return { data, setCookie: readSetCookie(res) };
 }
 
 export async function gql<T>(

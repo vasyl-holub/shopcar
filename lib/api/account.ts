@@ -447,7 +447,11 @@ export async function getFavorites(
           } | null;
         }[];
       } | null;
-    }>(FAVORITES, { auth, variables: { page, perPage } });
+    }>(FAVORITES, {
+      auth,
+      inUah: true,
+      variables: { page, perPage },
+    });
 
     const conn = data.productLikeAll;
     if (!conn) return { items: [], totalCount: 0, pagesCount: 0 };
