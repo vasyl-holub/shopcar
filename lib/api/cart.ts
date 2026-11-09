@@ -43,6 +43,8 @@ const CART_ITEMS = /* GraphQL */ `
         store {
           name
           returnDays
+          iconUrl
+          iconTitle
           isLocalStore
           publicNote
           warning

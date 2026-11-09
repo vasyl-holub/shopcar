@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { ImageOff } from "lucide-react";
 import { ProductPhoto } from "@/components/catalog/product-photo";
 import { ShopIcon } from "@/components/ui/shop-icon";
+import { StoreIcon } from "@/components/shop/store-icon";
 import { buttonClasses } from "@/components/ui/button";
 import { Dropdown } from "@/components/ui/dropdown";
 import { Tooltip } from "@/components/ui/tooltip";
@@ -355,7 +356,13 @@ function CartRow({
           <Tooltip
             label={delivery.text}
             className="shrink-0"
-            trigger={<ShopIcon name={delivery.icon} className="shrink-0" />}
+            trigger={
+              <StoreIcon
+                iconUrl={item.store?.iconUrl}
+                fallback={delivery.icon}
+                className="h-6 shrink-0"
+              />
+            }
           >
             <span
               className={cn(
@@ -372,7 +379,11 @@ function CartRow({
             )}
           </Tooltip>
         ) : (
-          <ShopIcon name={delivery.icon} className="shrink-0" />
+          <StoreIcon
+            iconUrl={item.store?.iconUrl}
+            fallback={delivery.icon}
+            className="h-6 shrink-0"
+          />
         )}
         {storeInfo.length > 0 ? (
           <Tooltip

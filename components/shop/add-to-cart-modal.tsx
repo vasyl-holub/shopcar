@@ -5,6 +5,7 @@ import { ImageOff } from "lucide-react";
 import { ProductPhoto } from "@/components/catalog/product-photo";
 import { Modal } from "@/components/ui/modal";
 import { ShopIcon } from "@/components/ui/shop-icon";
+import { StoreIcon } from "@/components/shop/store-icon";
 import { Tooltip } from "@/components/ui/tooltip";
 import { buttonClasses } from "@/components/ui/button";
 import { offerInfoAction, type OfferInfo } from "@/app/cart/offer-info-action";
@@ -245,7 +246,11 @@ export function AddToCartModal({
                       className="order-3 lg:order-2"
                     />
                     <p className="order-4 flex items-center gap-2.5 text-[12px] leading-4">
-                      <ShopIcon name={stockIcon} className="shrink-0" />
+                      <StoreIcon
+                        iconUrl={info.storeIcon}
+                        fallback={stockIcon}
+                        className="h-6 shrink-0"
+                      />
                       <span>
                         <span className="font-semibold">Доставка:</span>{" "}
                         {info.isLocal || !info.storeName ? (

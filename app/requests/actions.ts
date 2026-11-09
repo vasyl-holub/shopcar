@@ -110,10 +110,11 @@ export async function createRequestAction(
     }
 
     return { ok: true };
-  } catch {
+  } catch (error) {
+    console.error("Не вдалося надіслати запит на підбір:", error);
+    const reason = error instanceof Error ? error.message : "";
     return {
-      formError:
-        "Не вдалося надіслати запит. Спробуйте ще раз або напишіть у Viber.",
+      formError: `Не вдалося надіслати запит${reason ? `: ${reason}` : ""}. Спробуйте ще раз або напишіть у Viber.`,
       values,
     };
   }

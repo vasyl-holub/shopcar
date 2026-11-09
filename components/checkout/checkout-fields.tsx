@@ -15,6 +15,8 @@ export function UnderlineField({
   defaultValue,
   error,
   trailing,
+  list,
+  onValueChange,
 }: {
   id: string;
   name: string;
@@ -22,6 +24,9 @@ export function UnderlineField({
   type?: string;
   required?: boolean;
   autoComplete?: string;
+  /** id елемента <datalist> з підказками */
+  list?: string;
+  onValueChange?: (value: string) => void;
   defaultValue?: string;
   error?: string;
   /** Кнопка праворуч від значення, напр. «показати пароль» */
@@ -48,6 +53,10 @@ export function UnderlineField({
             name={name}
             type={type}
             autoComplete={autoComplete}
+            list={list}
+            onChange={
+              onValueChange ? (e) => onValueChange(e.target.value) : undefined
+            }
             defaultValue={defaultValue}
             aria-invalid={error ? true : undefined}
             className="h-6 min-w-0 flex-1 bg-transparent text-[16px] leading-6 text-black outline-none"

@@ -26,6 +26,9 @@ export type ProductOffer = {
     isLocal: boolean;
     /** Скільки днів діє повернення; 0 або null — повернення немає */
     returnDays: number | null;
+    /** Іконка складу (повернення, країна…) й підказка до неї — з бекенду */
+    iconUrl: string | null;
+    iconTitle: string | null;
     /** Година, до якої склад приймає замовлення */
     workUpTo: number | null;
     publicNote: string | null;
@@ -103,6 +106,8 @@ type RawOffer = {
     name: string | null;
     isLocalStore: boolean | null;
     returnDays: number | null;
+    iconUrl?: string | null;
+    iconTitle?: string | null;
     workUpTo: number | string | null;
     publicNote: string | null;
     number?: string | null;
@@ -205,6 +210,8 @@ const PRODUCT = /* GraphQL */ `
           name
           isLocalStore
           returnDays
+          iconUrl
+          iconTitle
           workUpTo
           publicNote
           number
@@ -238,6 +245,8 @@ const PRODUCT = /* GraphQL */ `
             name
             isLocalStore
             returnDays
+            iconUrl
+            iconTitle
             workUpTo
             publicNote
             number
@@ -302,6 +311,8 @@ const PRODUCT = /* GraphQL */ `
                 name
                 isLocalStore
                 returnDays
+                iconUrl
+                iconTitle
                 workUpTo
                 publicNote
                 number
@@ -372,6 +383,8 @@ function toOffer(raw: RawOffer): ProductOffer {
           name: text(store.name),
           isLocal: Boolean(store.isLocalStore),
           returnDays: store.returnDays ?? null,
+          iconUrl: text(store.iconUrl),
+          iconTitle: text(store.iconTitle),
           workUpTo: work != null && work !== "" ? Number(work) : null,
           publicNote: text(store.publicNote),
           number: text(store.number),

@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { redirect } from "next/navigation";
 import { PageContainer } from "@/components/ui/page-container";
 import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 import { PromoStrip } from "@/components/shop/promo";
@@ -26,9 +25,6 @@ export default async function CheckoutPage() {
     user ? getPickupStores() : [],
     user ? undefined : getRegistrationFormData().catch(() => undefined),
   ]);
-
-  /* Порожній кошик оформити не можна — повертаємо назад */
-  if (cart.items.length === 0) redirect("/cart");
 
   return (
     <>

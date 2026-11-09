@@ -12,10 +12,12 @@ import {
   Zap,
 } from "lucide-react";
 import { Dropdown } from "@/components/ui/dropdown";
+import { Modal } from "@/components/ui/modal";
 import { ShopIcon } from "@/components/ui/shop-icon";
 import { Tooltip } from "@/components/ui/tooltip";
 import { ProductPhoto } from "@/components/catalog/product-photo";
 import { BuyButton } from "@/components/shop/buy-button";
+import { StoreIcon } from "@/components/shop/store-icon";
 import { RangeFilter, type Range } from "@/components/catalog/range-filter";
 import { Pager } from "@/components/ui/pager";
 import type { ProductOffer } from "@/lib/api/product";
@@ -245,11 +247,14 @@ function OfferLine({
   add("Дата доставки", days === "—" ? "" : days);
 
   const storeTip = (icon: React.ReactNode) =>
-    rows.length === 0 ? (
+    rows.length === 0 && !store?.iconTitle ? (
       icon
     ) : (
       <Tooltip label="Інформація про склад" trigger={icon}>
         <span className="flex min-w-[210px] max-w-[300px] flex-col gap-[5px]">
+          {store?.iconTitle && (
+            <span className="font-semibold">{store.iconTitle}</span>
+          )}
           {rows.map((r) => (
             <span key={r.label} className="flex gap-[5px]">
               <span className={r.bold ? "shrink-0 font-semibold" : "shrink-0"}>
@@ -267,7 +272,13 @@ function OfferLine({
       <div className="flex items-center gap-2.5 lg:gap-5">
         <span className="flex w-[44px] shrink-0 items-center gap-1 lg:w-[52px]">
           {store?.isLocal ? (
-            storeTip(<ShopIcon name="storage" className="size-5 lg:size-6" />)
+            storeTip(
+              <StoreIcon
+                iconUrl={store.iconUrl}
+                fallback="storage"
+                className="h-5 lg:h-6"
+              />,
+            )
           ) : (
             <>
               {offer.note && (
@@ -285,9 +296,10 @@ function OfferLine({
                 </Tooltip>
               )}
               {storeTip(
-                <ShopIcon
-                  name={returns ? "arrow-green" : "arrow-red"}
-                  className="size-5 lg:size-6"
+                <StoreIcon
+                  iconUrl={store?.iconUrl}
+                  fallback={returns ? "arrow-green" : "arrow-red"}
+                  className="h-5 lg:h-6"
                 />,
               )}
             </>
@@ -372,13 +384,13 @@ function IconSlot({
   label,
   icon,
   tip,
-  href,
+  onClick,
 }: {
   active: boolean;
   label: string;
   icon: React.ReactNode;
   tip: React.ReactNode;
-  href?: string;
+  onClick?: () => void;
 }) {
   if (!active) {
     return (
@@ -388,14 +400,18 @@ function IconSlot({
     );
   }
 
-  const trigger =
-    href && href !== "#" ? (
-      <Link href={href} aria-label={label} className="flex">
-        {icon}
-      </Link>
-    ) : (
-      icon
-    );
+  const trigger = onClick ? (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={label}
+      className="flex cursor-pointer"
+    >
+      {icon}
+    </button>
+  ) : (
+    icon
+  );
 
   return (
     <Tooltip label={label} trigger={trigger}>
@@ -429,7 +445,7 @@ function ProductIcons({
   product: OfferProduct;
   className?: string;
 }) {
-  const link = product.href ?? "#";
+  const [photoOpen, setPhotoOpen] = useState(false);
   const icon = "size-5 text-orange lg:size-6";
 
   return (
@@ -467,7 +483,7 @@ function ProductIcons({
       <IconSlot
         active={Boolean(product.image)}
         label="Фото товару"
-        href={link}
+        onClick={() => setPhotoOpen(true)}
         icon={<Camera aria-hidden className={icon} strokeWidth={1.75} />}
         tip={
           <span className="relative block size-[160px] overflow-hidden">
@@ -489,6 +505,27 @@ function ProductIcons({
         icon={<PlayCircle aria-hidden className={icon} strokeWidth={1.75} />}
         tip={null}
       />
+      {photoOpen && product.image && (
+        <Modal title={product.name} onClose={() => setPhotoOpen(false)}>
+          <div className="flex flex-col items-center gap-3 p-2.5 text-center">
+            <span className="relative block aspect-square w-full max-w-[480px]">
+              <ProductPhoto
+                sources={[product.image]}
+                alt={product.name}
+                article={product.num}
+                width={480}
+                height={480}
+                sizes="(min-width: 1024px) 480px, 90vw"
+                className="size-full object-contain"
+                placeholderIconClassName="size-16"
+              />
+            </span>
+            <p className="text-[14px] leading-[1.4] text-shop-black">
+              {[product.brand, product.num].filter(Boolean).join(" ")}
+            </p>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }

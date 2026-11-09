@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ImageOff } from "lucide-react";
 import { ProductPhoto } from "@/components/catalog/product-photo";
 import { ShopIcon } from "@/components/ui/shop-icon";
+import { StoreIcon } from "@/components/shop/store-icon";
 import { Tooltip } from "@/components/ui/tooltip";
 import { cn } from "@/lib/cn";
 import { formatIn, UAH } from "@/lib/money";
@@ -139,7 +140,11 @@ export function CheckoutItem({
         </Link>
       </p>
       <p className="hidden items-center gap-2.5 text-[12px] leading-[1.33] lg:flex">
-        <ShopIcon name={stockIcon(item)} className="shrink-0" />
+        <StoreIcon
+          iconUrl={item.store?.iconUrl}
+          fallback={stockIcon(item)}
+          className="h-6 shrink-0"
+        />
         <span>
           <span className="font-semibold">Дні доставки:</span> {days}
         </span>
@@ -228,7 +233,11 @@ export function CheckoutItem({
         </div>
 
         <p className="flex items-center gap-2.5 py-[9px] text-[12px] leading-[1.33] text-black">
-          <ShopIcon name={stockIcon(item)} className="shrink-0" />
+          <StoreIcon
+            iconUrl={item.store?.iconUrl}
+            fallback={stockIcon(item)}
+            className="h-6 shrink-0"
+          />
           <span>
             <span className="font-semibold">Дні доставки:</span> {days}
           </span>

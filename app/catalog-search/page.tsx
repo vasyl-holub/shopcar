@@ -94,7 +94,7 @@ export default async function CatalogSearchPage({
               categoryName={categoryName}
               sort={first(sp.sort)}
               descending={descending}
-              initial={{ type, num, brand, name }}
+              initial={{ type, num, brand, name, cross, ean }}
             />
           }
           footer={

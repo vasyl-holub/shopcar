@@ -257,6 +257,25 @@ export function CheckoutForm({
     );
   }
 
+  /* Порожній кошик оформити не можна. Редірект тут, а не на сторінці: після
+     замовлення сервер перерендерює сторінку з порожнім кошиком, і редірект
+     забрав би екран «Замовлення прийнято» */
+  if (items.length === 0) {
+    return (
+      <div className="flex flex-col items-start gap-5 text-black">
+        <p className="text-[16px] leading-[1.5]">
+          У кошику немає товарів для оформлення.
+        </p>
+        <Link
+          href="/cart"
+          className={buttonClasses({ className: "uppercase" })}
+        >
+          Перейти до кошика
+        </Link>
+      </div>
+    );
+  }
+
   const chosen = deliveries.find((d) => d.id === delivery);
   const carrier = chosen?.name ?? "";
   /* Самовивіз визначає прапорець бекенда, а не назва способу доставки */

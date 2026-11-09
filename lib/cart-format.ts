@@ -17,6 +17,9 @@ export type CartItem = {
   store?: {
     name: string | null;
     returnDays: number | null;
+    /** Іконка складу та підказка до неї — з бекенду */
+    iconUrl?: string | null;
+    iconTitle?: string | null;
     isLocalStore: boolean | null;
     publicNote: string | null;
     warning: string | null;

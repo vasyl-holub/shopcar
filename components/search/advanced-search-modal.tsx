@@ -9,6 +9,7 @@ import {
 import { Modal } from "@/components/ui/modal";
 import { buttonClasses } from "@/components/ui/button";
 import { advancedSearchOptionsAction } from "@/app/search/options-action";
+import { useManufacturerSuggest } from "@/components/search/use-manufacturer-suggest";
 import type { Choice } from "@/lib/api/delivery";
 
 const TYPES: Choice[] = [
@@ -32,6 +33,8 @@ function SearchModal({ onClose }: { onClose: () => void }) {
   const [slug, setSlug] = useState("");
   const [catalogs, setCatalogs] = useState<Choice[]>([]);
   const [error, setError] = useState<string | undefined>();
+  const [brand, setBrand] = useState("");
+  const brands = useManufacturerSuggest(brand);
 
   useEffect(() => {
     let alive = true;
@@ -74,8 +77,18 @@ function SearchModal({ onClose }: { onClose: () => void }) {
               id={`as-${f.name}`}
               name={f.name}
               label={f.label}
+              autoComplete="off"
+              {...(f.name === "brand" && {
+                list: "as-brand-list",
+                onValueChange: setBrand,
+              })}
             />
           ))}
+          <datalist id="as-brand-list">
+            {brands.map((b) => (
+              <option key={b} value={b} />
+            ))}
+          </datalist>
           <UnderlineSelect
             name="catalog"
             label="Каталог"

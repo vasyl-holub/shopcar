@@ -20,6 +20,8 @@ export type OfferInfo = {
   /** Назва складу: для чужих складів показується замість строку */
   storeName: string | null;
   returns: boolean;
+  /** Іконка складу з бекенду; без неї — стрілка за умовами повернення */
+  storeIcon: string | null;
   /** Ціна за одиницю, грн */
   price: number;
 };
@@ -38,6 +40,7 @@ const OFFER = /* GraphQL */ `
         warning
         isLocalStore
         returnDays
+        iconUrl
       }
       product {
         name
@@ -76,6 +79,7 @@ export async function offerInfoAction(id: string): Promise<OfferInfo | null> {
           warning: string | null;
           isLocalStore: boolean | null;
           returnDays: number | null;
+          iconUrl: string | null;
         } | null;
         product: {
           name: string | null;
@@ -111,6 +115,7 @@ export async function offerInfoAction(id: string): Promise<OfferInfo | null> {
       isLocal: Boolean(o.store?.isLocalStore),
       storeName: o.store?.name?.trim() || null,
       returns: (o.store?.returnDays ?? 0) > 0,
+      storeIcon: o.store?.iconUrl?.trim() || null,
       price: o.priceUser ?? o.priceOut ?? 0,
     };
   } catch {

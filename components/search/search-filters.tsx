@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ShopIcon } from "@/components/ui/shop-icon";
 import type { MatchType } from "@/lib/api/catalog-search";
+import { useManufacturerSuggest } from "@/components/search/use-manufacturer-suggest";
 
 const TYPES: { value: MatchType; label: string }[] = [
   { value: "exact", label: "Точний збіг" },
@@ -56,11 +57,14 @@ function Field({
   value,
   onChange,
   label,
+  list,
 }: {
   name: string;
   value: string;
   onChange: (v: string) => void;
   label: string;
+  /** id елемента <datalist> з підказками */
+  list?: string;
 }) {
   return (
     <div className="px-2">
@@ -72,6 +76,7 @@ function Field({
         placeholder="Пошук"
         aria-label={label}
         autoComplete="off"
+        list={list}
         className="h-[42px] w-full rounded-[4px] border border-[#e6e6e6] bg-white pl-3 pr-[9px] text-[16px] leading-[1.5] text-shop-black outline-none placeholder:text-muted focus:border-orange"
       />
     </div>
@@ -96,13 +101,22 @@ export function SearchFilters({
   categoryName: string | null;
   sort: string;
   descending: boolean;
-  initial: { type: MatchType; num: string; brand: string; name: string };
+  initial: {
+    type: MatchType;
+    num: string;
+    brand: string;
+    name: string;
+    /** Умови, яких у панелі немає, але які не можна губити при зміні фільтра */
+    cross: string;
+    ean: string;
+  };
 }) {
   const router = useRouter();
   const [type, setType] = useState<MatchType>(initial.type);
   const [num, setNum] = useState(initial.num);
   const [brand, setBrand] = useState(initial.brand);
   const [name, setName] = useState(initial.name);
+  const brands = useManufacturerSuggest(brand);
 
   const apply = (next: Partial<{ type: MatchType; slug: string }> = {}) => {
     const query = new URLSearchParams();
@@ -111,6 +125,8 @@ export function SearchFilters({
     if (name.trim()) query.set("name", name.trim());
     if (num.trim()) query.set("num", num.trim());
     if (brand.trim()) query.set("brand", brand.trim());
+    if (initial.cross) query.set("cross", initial.cross);
+    if (initial.ean) query.set("ean", initial.ean);
     const t = next.type ?? type;
     if (t !== "exact") query.set("type", t);
     if (sort) query.set("sort", sort);
@@ -177,7 +193,18 @@ export function SearchFilters({
           </>
         }
       >
-        <Field name="brand" value={brand} onChange={setBrand} label="Бренд" />
+        <Field
+          name="brand"
+          value={brand}
+          onChange={setBrand}
+          label="Бренд"
+          list="sf-brand-list"
+        />
+        <datalist id="sf-brand-list">
+          {brands.map((b) => (
+            <option key={b} value={b} />
+          ))}
+        </datalist>
       </Group>
       <Group title="Назва">
         <Field name="name" value={name} onChange={setName} label="Назва" />
