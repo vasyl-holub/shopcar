@@ -97,7 +97,7 @@ function LoginForm({ onView }: { onView: (view: View) => void }) {
           <UnderlineField
             id="login-username"
             name="username"
-            label="Email або номер телефону"
+            label="Email"
             autoComplete="username"
             defaultValue={v.username}
             error={e.username}

@@ -156,7 +156,6 @@ export async function addProductReview(input: {
   text: string;
 }) {
   const auth = await getApiAuth();
-  const contentId = await getProductContentTypeId();
 
   return gqlRaw<{ addComment: { errors: ApiFieldError[] | null } }>(
     /* GraphQL */ `
@@ -173,7 +172,8 @@ export async function addProductReview(input: {
       auth,
       variables: {
         input: {
-          contentId,
+          /* Схема addComment вимагає тип у форматі «додаток.модель» */
+          contentType: "product.product",
           objectId: globalId("ProductNode", input.productPk),
           name: input.name,
           text: input.text,

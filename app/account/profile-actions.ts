@@ -1,5 +1,6 @@
 "use server";
 
+import { joinRecipient } from "@/lib/recipient";
 import { revalidatePath } from "next/cache";
 import { GraphQLRequestError } from "@/lib/api/graphql";
 import { canChangeEmail, updateProfileFields } from "@/lib/api/account";
@@ -91,6 +92,7 @@ export async function saveDeliveryAction(
 ): Promise<AccountFormState> {
   const values = {
     recipient: field(data, "recipient"),
+    recipientPhone: field(data, "recipientPhone"),
     country: field(data, "country"),
     region: field(data, "region"),
     city: field(data, "city"),
@@ -102,7 +104,7 @@ export async function saveDeliveryAction(
 
   return save(
     {
-      recipient: values.recipient,
+      recipient: joinRecipient(values.recipient, values.recipientPhone),
       city: values.city,
       address: values.address,
       deliveryInfo: values.deliveryInfo,

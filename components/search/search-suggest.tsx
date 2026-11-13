@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState, useTransition } from "react";
+import { Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ShopIcon } from "@/components/ui/shop-icon";
@@ -39,6 +40,8 @@ export function SearchSuggest({
   onNavigate?: () => void;
 }) {
   const router = useRouter();
+  /* Поки іде перехід на сторінку результатів, у полі крутиться індикатор */
+  const [navigating, startNavigation] = useTransition();
   const [value, setValue] = useState(defaultValue);
   /* Відповідь зберігаємо разом із запитом, якому вона належить. Так
      застаріла видача не блимає під новим текстом, і стан не доводиться
@@ -163,7 +166,9 @@ export function SearchSuggest({
       return;
     }
 
-    router.push(`/search?q=${encodeURIComponent(query)}`);
+    startNavigation(() =>
+      router.push(`/search?q=${encodeURIComponent(query)}`),
+    );
   }
 
   return (
@@ -202,7 +207,11 @@ export function SearchSuggest({
           aria-label="Знайти"
           className="flex size-6 shrink-0 items-center justify-center"
         >
-          <ShopIcon name="search" />
+          {navigating ? (
+            <Loader2 aria-hidden className="size-5 animate-spin text-orange" />
+          ) : (
+            <ShopIcon name="search" />
+          )}
         </button>
       </form>
 

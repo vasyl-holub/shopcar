@@ -8,10 +8,23 @@ import { ShopIcon } from "@/components/ui/shop-icon";
 import { buttonClasses } from "@/components/ui/button";
 import { Pager } from "@/components/ui/pager";
 import { cn } from "@/lib/cn";
+import { formatDateShort } from "@/lib/format-date";
 import type { ViewedProduct } from "@/lib/api/history";
 
-type Filters = { date: string; brand: string; num: string; name: string };
-const EMPTY: Filters = { date: "", brand: "", num: "", name: "" };
+type Filters = {
+  dateFrom: string;
+  dateTo: string;
+  brand: string;
+  num: string;
+  name: string;
+};
+const EMPTY: Filters = {
+  dateFrom: "",
+  dateTo: "",
+  brand: "",
+  num: "",
+  name: "",
+};
 
 const field =
   "h-[42px] w-full rounded-[4px] border border-line bg-white px-[15px] text-[14px] leading-[1.4] text-[#121212] outline-none focus:border-orange";
@@ -35,9 +48,50 @@ function Filter({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className={field}
-        placeholder={label === "Дата перегляду" ? "РРРР-ММ-ДД" : undefined}
       />
     </label>
+  );
+}
+
+/** Період «від — до»: у полях календарик, дата читається як день.місяць.рік */
+function DateRange({
+  from,
+  to,
+  onChange,
+  className,
+}: {
+  from: string;
+  to: string;
+  onChange: (next: { dateFrom: string; dateTo: string }) => void;
+  className: string;
+}) {
+  return (
+    <div className={`flex flex-col gap-2 ${className}`}>
+      <span className="text-[14px] leading-[1.4] text-black">
+        Дата перегляду
+      </span>
+      <div className="flex items-center gap-2.5">
+        <input
+          type="date"
+          value={from}
+          max={to || undefined}
+          aria-label="Дата перегляду від"
+          onChange={(e) => onChange({ dateFrom: e.target.value, dateTo: to })}
+          className={cn(field, "min-w-0 cursor-pointer")}
+        />
+        <span aria-hidden className="text-muted">
+          –
+        </span>
+        <input
+          type="date"
+          value={to}
+          min={from || undefined}
+          aria-label="Дата перегляду до"
+          onChange={(e) => onChange({ dateFrom: from, dateTo: e.target.value })}
+          className={cn(field, "min-w-0 cursor-pointer")}
+        />
+      </div>
+    </div>
   );
 }
 
@@ -63,7 +117,8 @@ export function HistoryTable({ items }: { items: ViewedProduct[] }) {
 
   const rows = items.filter(
     (i) =>
-      has(day(i.viewedAt), applied.date) &&
+      (!applied.dateFrom || day(i.viewedAt) >= applied.dateFrom) &&
+      (!applied.dateTo || day(i.viewedAt) <= applied.dateTo) &&
       has(i.brand ?? "", applied.brand) &&
       has(i.num, applied.num) &&
       has(i.name, applied.name),
@@ -106,11 +161,11 @@ export function HistoryTable({ items }: { items: ViewedProduct[] }) {
         )}
       >
         <div className="flex flex-wrap gap-[30px] max-lg:grid max-lg:grid-cols-2 max-lg:gap-[15px] max-sm:grid-cols-1">
-          <Filter
-            label="Дата перегляду"
-            className="w-[200px] max-lg:w-full"
-            value={draft.date}
-            onChange={(date) => setDraft((d) => ({ ...d, date }))}
+          <DateRange
+            className="w-[360px] max-lg:w-full"
+            from={draft.dateFrom}
+            to={draft.dateTo}
+            onChange={(range) => setDraft((d) => ({ ...d, ...range }))}
           />
           <Filter
             label="Виробник"
@@ -191,7 +246,7 @@ export function HistoryTable({ items }: { items: ViewedProduct[] }) {
                     className="flex items-center border-b border-[#e6e6e6] py-[15px] text-[16px] leading-[1.5] text-[#121212] max-lg:py-[5px]"
                   >
                     <span className="tnum flex-1 pr-2.5 max-lg:w-[130px] max-lg:flex-none">
-                      {day(item.viewedAt)}
+                      {formatDateShort(item.viewedAt)}
                     </span>
                     <span className="min-w-0 flex-1 break-words px-2.5 max-lg:w-[151px] max-lg:flex-none max-lg:pl-0">
                       {item.brand}

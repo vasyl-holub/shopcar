@@ -1,3 +1,4 @@
+import { hasStock } from "@/lib/stock";
 import Link from "next/link";
 import { ImageOff } from "lucide-react";
 import { ProductPhoto } from "@/components/catalog/product-photo";
@@ -26,7 +27,7 @@ export function ProductCard({
 }) {
   const href = `/part/${product.slug}/${product.id}`;
   const count = product.count ?? 0;
-  const available = product.canBuy && count > 0;
+  const available = hasStock(product.canBuy, product.count);
 
   return (
     <article
@@ -75,7 +76,11 @@ export function ProductCard({
             </Link>
           </h3>
           <p className="text-[12px] leading-[1.33]">
-            {available ? `В наявності: ${count}шт.` : "Немає в наявності"}
+            {!available
+              ? "Немає в наявності"
+              : count > 0
+                ? `В наявності: ${count}шт.`
+                : "В наявності"}
           </p>
         </div>
 

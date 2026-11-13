@@ -1,10 +1,10 @@
 "use client";
 
-import { useActionState, useState } from "react";
-import Link from "next/link";
+import { useActionState, useRef, useState, useTransition } from "react";
 import { Check, Lock, Mail, Phone, Truck, User, X } from "lucide-react";
 import { UnderlineSelect } from "@/components/checkout/checkout-fields";
 import { ShopIcon } from "@/components/ui/shop-icon";
+import { Recaptcha } from "@/components/auth/recaptcha";
 import { cn } from "@/lib/cn";
 import {
   changePasswordAction,
@@ -14,7 +14,12 @@ import {
   saveDeliveryAction,
   savePersonalAction,
 } from "@/app/account/profile-actions";
+import {
+  remindPasswordAction,
+  type RemindResult,
+} from "@/app/account/remind-action";
 import type { Profile } from "@/lib/api/account";
+import { splitRecipient } from "@/lib/recipient";
 
 type Choice = { value: string; label: string };
 
@@ -211,7 +216,11 @@ function useSection(
     null,
   );
   const editing = openedFor === state;
-  const setEditing = (on: boolean) => setOpenedFor(on ? state : null);
+  const setEditing = (on: boolean) => {
+    setOpenedFor(on ? state : null);
+    /* Нове «Редагувати» знімає попереднє «Скасувати», інакше розділ не відкриється */
+    if (on) setDismissedFor(null);
+  };
   const cancel = () => {
     setOpenedFor(null);
     setDismissedFor(state);
@@ -333,6 +342,7 @@ function DeliverySection({
 }) {
   const { state, formAction, pending, open, setEditing, cancel } =
     useSection(saveDeliveryAction);
+  const recipient = splitRecipient(profile.recipient);
 
   return (
     <form action={formAction} noValidate className="flex min-w-0 flex-col">
@@ -353,8 +363,16 @@ function DeliverySection({
         </p>
       )}
       <div className="flex flex-col gap-[15px] pt-2.5 lg:gap-[5px] lg:pt-0.5">
-        <Row label="Одержувач:" value={profile.recipient} editing={open}>
-          <TextInput name="recipient" defaultValue={profile.recipient} />
+        <Row label="Одержувач:" value={recipient.name} editing={open}>
+          <TextInput name="recipient" defaultValue={recipient.name} />
+        </Row>
+        <Row label="Телефон одержувача:" value={recipient.phone} editing={open}>
+          <TextInput
+            name="recipientPhone"
+            type="tel"
+            autoComplete="off"
+            defaultValue={recipient.phone}
+          />
         </Row>
         <Row label="Країна:" value={profile.countryName ?? ""} editing={open}>
           <SelectInput
@@ -466,7 +484,41 @@ function PasswordField({
   );
 }
 
-function PasswordSection() {
+function PasswordSection({
+  email,
+  phone,
+  siteKey,
+}: {
+  email: string | null;
+  phone: string | null;
+  siteKey: string;
+}) {
+  const formRef = useRef<HTMLFormElement>(null);
+  const [channel, setChannel] = useState<"email" | "phone" | null>(null);
+  const [sending, startSending] = useTransition();
+  const [result, setResult] = useState<RemindResult | null>(null);
+  const [attempt, setAttempt] = useState(0);
+
+  const pick = (next: "email" | "phone") => {
+    setChannel((current) => (current === next ? null : next));
+    setResult(null);
+  };
+
+  /* Токен капчі лежить у прихованому полі віджета всередині форми */
+  const send = () => {
+    if (!channel) return;
+    const token = String(
+      new FormData(formRef.current ?? undefined).get("captcha") ?? "",
+    );
+    startSending(async () => {
+      setResult(await remindPasswordAction(channel, token));
+      setAttempt((n) => n + 1);
+    });
+  };
+
+  const remindButton =
+    "flex cursor-pointer items-center gap-2.5 py-1 text-[12px] max-lg:px-[5px] max-lg:py-[11px] font-semibold leading-[1.33] text-black transition-opacity hover:opacity-70";
+
   const [state, action, pending] = useActionState<AccountFormState, FormData>(
     changePasswordAction,
     {},
@@ -475,6 +527,7 @@ function PasswordSection() {
 
   return (
     <form
+      ref={formRef}
       key={state.ok ? "done" : "edit"}
       action={action}
       noValidate
@@ -510,29 +563,77 @@ function PasswordSection() {
         />
         {/* Забули поточний — запит відновлення за email чи телефоном */}
         <div className="flex items-start gap-x-10 gap-y-0 max-lg:flex-col lg:flex-wrap lg:items-center lg:gap-y-1 lg:pl-[200px]">
-          <Link
-            href="/password/reset"
-            className="flex items-center gap-2.5 py-1 text-[12px] max-lg:px-[5px] max-lg:py-[11px] font-semibold leading-[1.33] text-black transition-opacity hover:opacity-70"
-          >
-            <Mail
-              aria-hidden
-              className="size-6 text-orange"
-              strokeWidth={1.5}
-            />
-            Нагадати на email
-          </Link>
-          <Link
-            href="/password/reset"
-            className="flex items-center gap-2.5 py-1 text-[12px] max-lg:px-[5px] max-lg:py-[11px] font-semibold leading-[1.33] text-black transition-opacity hover:opacity-70"
-          >
-            <Phone
-              aria-hidden
-              className="size-6 text-orange"
-              strokeWidth={1.5}
-            />
-            Нагадати на номер телефону
-          </Link>
+          {email && (
+            <button
+              type="button"
+              onClick={() => pick("email")}
+              aria-expanded={channel === "email"}
+              className={remindButton}
+            >
+              <Mail
+                aria-hidden
+                className="size-6 text-orange"
+                strokeWidth={1.5}
+              />
+              Нагадати на email
+            </button>
+          )}
+          {phone && (
+            <button
+              type="button"
+              onClick={() => pick("phone")}
+              aria-expanded={channel === "phone"}
+              className={remindButton}
+            >
+              <Phone
+                aria-hidden
+                className="size-6 text-orange"
+                strokeWidth={1.5}
+              />
+              Нагадати на номер телефону
+            </button>
+          )}
         </div>
+
+        {channel && (
+          <div className="flex flex-col items-start gap-3 lg:pl-[200px]">
+            {result && "ok" in result ? (
+              <p
+                aria-live="polite"
+                className="text-[14px] leading-[1.4] text-shop-green"
+              >
+                {channel === "email"
+                  ? `Лист із посиланням для відновлення надіслано на ${result.target}`
+                  : `SMS із вашим логіном надіслано на номер ${result.target}`}
+              </p>
+            ) : (
+              <>
+                <p className="text-[14px] leading-[1.4] text-black">
+                  {channel === "email"
+                    ? "Надішлемо лист із посиланням для скидання пароля."
+                    : "Надішлемо SMS із вашим логіном для входу."}
+                </p>
+                <Recaptcha siteKey={siteKey} resetKey={attempt} />
+                {result && "error" in result && (
+                  <p
+                    role="alert"
+                    className="text-[14px] leading-[1.4] text-danger-700"
+                  >
+                    {result.error}
+                  </p>
+                )}
+                <button
+                  type="button"
+                  onClick={send}
+                  disabled={sending}
+                  className="h-[42px] cursor-pointer rounded-[4px] border border-orange px-5 text-[14px] font-semibold uppercase leading-[1.4] text-orange transition-colors hover:bg-orange hover:text-white disabled:cursor-default disabled:opacity-60"
+                >
+                  {sending ? "Надсилаємо…" : "Надіслати"}
+                </button>
+              </>
+            )}
+          </div>
+        )}
 
         <PasswordField
           name="newPassword"
@@ -563,8 +664,11 @@ export function ProfileSections({
   regions,
   payMethods,
   deliveries,
+  siteKey,
 }: {
   profile: Profile;
+  /** Ключ reCAPTCHA для «Нагадати пароль» */
+  siteKey: string;
   /** Бекенд дозволяє клієнту міняти email (canUserChangeEmail) */
   canChangeEmail: boolean;
   userTypeLabel: string;
@@ -590,7 +694,11 @@ export function ProfileSections({
         />
       </div>
       <div className="lg:w-[calc(50%-50px)]">
-        <PasswordSection />
+        <PasswordSection
+          email={profile.email || null}
+          phone={profile.phone}
+          siteKey={siteKey}
+        />
       </div>
     </div>
   );

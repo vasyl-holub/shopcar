@@ -54,6 +54,7 @@ export function CheckoutForm({
   defaultName,
   defaultPhone,
   defaultEmail,
+  profileDefaults = {},
 }: {
   items: CartItem[];
   deliveries: OrderOption[];
@@ -69,6 +70,13 @@ export function CheckoutForm({
   defaultName: string;
   defaultPhone: string;
   defaultEmail: string;
+  /** Доставка й оплата зі збережених даних клієнта в профілі */
+  profileDefaults?: {
+    delivery?: string;
+    payMethod?: string;
+    address?: string;
+    shop?: string;
+  };
 }) {
   const router = useRouter();
   const [state, action, submitting] = useActionState<CheckoutState, FormData>(
@@ -111,11 +119,24 @@ export function CheckoutForm({
   }, [state]);
 
   const [delivery, setDelivery] = useState(
-    () => v.delivery || deliveries[0]?.id || "",
+    () =>
+      v.delivery ||
+      deliveries.find((d) => d.id === profileDefaults.delivery)?.id ||
+      deliveries[0]?.id ||
+      "",
   );
-  const [shop, setShop] = useState(v.shop ?? "");
+  const [shop, setShop] = useState(
+    () =>
+      v.shop ??
+      shops.find((s) => s.value === profileDefaults.shop)?.value ??
+      "",
+  );
   const [payMethod, setPayMethod] = useState(
-    () => v.payMethod || payMethods[0]?.id || "",
+    () =>
+      v.payMethod ||
+      payMethods.find((p) => p.id === profileDefaults.payMethod)?.id ||
+      payMethods[0]?.id ||
+      "",
   );
   /* «Нова пошта»: тип, область, місто й відділення підтягуються каскадом */
   const [npType, setNpType] = useState(v.npType ?? "");
@@ -542,7 +563,7 @@ export function CheckoutForm({
                       name="address"
                       label="Адреса доставки"
                       required
-                      defaultValue={v.address}
+                      defaultValue={v.address ?? profileDefaults.address}
                       error={e.address}
                     />
                   ) : (
@@ -581,7 +602,7 @@ export function CheckoutForm({
                   id="address"
                   name="address"
                   label="Адреса доставки"
-                  defaultValue={v.address}
+                  defaultValue={v.address ?? profileDefaults.address}
                   error={e.address}
                 />
               )}

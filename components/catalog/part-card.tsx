@@ -1,3 +1,4 @@
+import { hasStock } from "@/lib/stock";
 import Link from "next/link";
 import { ProductPhoto } from "@/components/catalog/product-photo";
 import { AddToCartButton } from "@/components/catalog/add-to-cart-button";
@@ -7,7 +8,7 @@ import { formatMoney } from "@/lib/cn";
 export function PartCard({ product }: { product: ProductListItem }) {
   const href = `/part/${product.slug}/${product.id}`;
   const title = productTitle(product);
-  const available = product.canBuy && (product.count ?? 0) > 0;
+  const available = hasStock(product.canBuy, product.count);
 
   return (
     <article className="flex h-full flex-col items-start gap-4">

@@ -18,7 +18,7 @@ export async function loginActionFn(
   const password = String(formData.get("password") ?? "");
 
   const fieldErrors: Record<string, string> = {};
-  if (!username) fieldErrors.username = "Вкажіть email або номер телефону";
+  if (!username) fieldErrors.username = "Вкажіть email";
   if (!password) fieldErrors.password = "Вкажіть пароль";
   if (Object.keys(fieldErrors).length)
     return { fieldErrors, values: { username } };

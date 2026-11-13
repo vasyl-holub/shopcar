@@ -1,8 +1,9 @@
 import Image from "next/image";
 import Link from "next/link";
 import { site, socials } from "@/lib/site";
-import { getSiteKey } from "@/lib/api/auth";
+import { getCurrentUser, getSiteKey } from "@/lib/api/auth";
 import { getMessengers } from "@/lib/api/messengers";
+import { getInfoEmail } from "@/lib/api/core-settings";
 import { Container } from "@/components/ui/container";
 import { ShopIcon } from "@/components/ui/shop-icon";
 import { SectionLine, SectionTitle } from "@/components/shop/section-heading";
@@ -29,9 +30,11 @@ const socialIcons = [
 const subheading = "text-[16px] font-semibold leading-[1.5]";
 
 export async function Footer() {
-  const [siteKey, messengers] = await Promise.all([
+  const [siteKey, messengers, user, email] = await Promise.all([
     getSiteKey(),
     getMessengers(),
+    getCurrentUser(),
+    getInfoEmail(),
   ]);
 
   return (
@@ -52,7 +55,7 @@ export async function Footer() {
                 </li>
                 <li className="flex items-center gap-3">
                   <ShopIcon name="at-symbol" className="shrink-0" />
-                  <a href={`mailto:${site.email}`}>{site.email}</a>
+                  <a href={`mailto:${email}`}>{email}</a>
                 </li>
                 <li className="flex items-start gap-3">
                   <ShopIcon
@@ -131,7 +134,7 @@ export async function Footer() {
 
           <div className="flex min-w-0 flex-1 flex-col gap-[18px] lg:max-w-[588px]">
             <h3 className={subheading}>Зворотній зв’язок</h3>
-            <FooterForm siteKey={siteKey} />
+            <FooterForm siteKey={siteKey} signedIn={Boolean(user)} />
           </div>
         </div>
 

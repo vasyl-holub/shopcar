@@ -18,7 +18,6 @@ export async function PartReviews({
       items={items}
       loggedIn={Boolean(user)}
       defaultName={user?.fullName || user?.firstName || ""}
-      defaultEmail={user?.email ?? ""}
     />
   );
 }

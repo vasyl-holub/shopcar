@@ -1,3 +1,4 @@
+import { hasStock } from "@/lib/stock";
 import { gql } from "@/lib/api/graphql";
 import { getApiAuth } from "@/lib/api/session";
 import { queryVariants, stripSeparators } from "@/lib/search";
@@ -424,7 +425,7 @@ export async function getProduct(id: string): Promise<Product | null> {
 
   const offers = (p.prices?.edges ?? []).map(toOffer);
   /* Основна ціна — найдешевша з тих, що можна купити */
-  const buyable = offers.filter((o) => o.canBuy && (o.count ?? 0) > 0);
+  const buyable = offers.filter((o) => hasStock(o.canBuy, o.count));
   const bestOffer =
     buyable.sort((a, b) => (a.price ?? 0) - (b.price ?? 0))[0] ??
     (p.price ? toOffer(p.price) : null);

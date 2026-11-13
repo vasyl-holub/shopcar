@@ -247,7 +247,7 @@ export function AddToCartModal({
                     />
                     <p className="order-4 flex items-center gap-2.5 text-[12px] leading-4">
                       <StoreIcon
-                        iconUrl={info.storeIcon}
+                        iconUrl={info.isLocal ? null : info.storeIcon}
                         fallback={stockIcon}
                         className="h-6 shrink-0"
                       />

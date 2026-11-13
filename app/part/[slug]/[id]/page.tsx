@@ -18,7 +18,9 @@ import { getProductSeo } from "@/lib/api/seo";
 import { getProduct, getPromoProducts, productTitle } from "@/lib/api/product";
 import { getCurrencyRates } from "@/lib/api/currency";
 import { getCurrentUser } from "@/lib/api/auth";
+import { hasStock } from "@/lib/stock";
 import { getProductReviews } from "@/lib/api/reviews";
+import { getStoreItemMaxCount } from "@/lib/api/core-settings";
 import { BuyButton } from "@/components/shop/buy-button";
 import { formatMoney } from "@/lib/cn";
 import { homePromo } from "@/lib/home-content";
@@ -53,10 +55,11 @@ export default async function PartPage({
   const product = await getProduct(id);
   if (!product) notFound();
 
-  const [promo, rates, reviews] = await Promise.all([
+  const [promo, rates, reviews, maxCount] = await Promise.all([
     getPromoProducts(8),
     getCurrencyRates(),
     getProductReviews(product.id),
+    getStoreItemMaxCount(),
   ]);
 
   /* У макеті заголовок і крихти — лише назва: бренд і артикул стоять
@@ -101,7 +104,7 @@ export default async function PartPage({
 
   /* Найвигідніша пропозиція для блоку купівлі вгорі */
   const best = product.bestOffer;
-  const buyable = Boolean(best?.canBuy && (best?.count ?? 0) > 0);
+  const buyable = hasStock(best?.canBuy, best?.count);
   const user = await getCurrentUser();
 
   /* Вкладка рахує відгуки, які справді є у списку, а рейтинг — оцінки:
@@ -183,7 +186,12 @@ export default async function PartPage({
         <ProductTabs
           reviewCount={reviewCount}
           offers={
-            <ProductOffers own={own} analogues={analogues} rates={rates} />
+            <ProductOffers
+              own={own}
+              analogues={analogues}
+              rates={rates}
+              maxCount={maxCount}
+            />
           }
           about={
             product.brandDescription ? (

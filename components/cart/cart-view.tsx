@@ -358,7 +358,7 @@ function CartRow({
             className="shrink-0"
             trigger={
               <StoreIcon
-                iconUrl={item.store?.iconUrl}
+                iconUrl={item.store?.isLocalStore ? null : item.store?.iconUrl}
                 fallback={delivery.icon}
                 className="h-6 shrink-0"
               />
@@ -380,7 +380,7 @@ function CartRow({
           </Tooltip>
         ) : (
           <StoreIcon
-            iconUrl={item.store?.iconUrl}
+            iconUrl={item.store?.isLocalStore ? null : item.store?.iconUrl}
             fallback={delivery.icon}
             className="h-6 shrink-0"
           />

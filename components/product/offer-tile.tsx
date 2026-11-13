@@ -1,3 +1,4 @@
+import { hasStock } from "@/lib/stock";
 import Link from "next/link";
 import { ImageOff } from "lucide-react";
 import { ProductPhoto } from "@/components/catalog/product-photo";
@@ -21,7 +22,7 @@ export function OfferTile({
   favorite?: boolean;
 }) {
   const href = `/part/${product.slug}/${product.id}`;
-  const available = product.canBuy && (product.count ?? 0) > 0;
+  const available = hasStock(product.canBuy, product.count);
 
   return (
     <article

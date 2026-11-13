@@ -1,9 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { RefreshCw } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Dropdown } from "@/components/ui/dropdown";
 import { ShopIcon } from "@/components/ui/shop-icon";
+import { Pagination } from "@/components/ui/pagination";
 import { ProductCard } from "@/components/shop/product-card";
 import type { ProductListItem } from "@/lib/api/product";
 import type { CurrencyRate } from "@/lib/api/currency";
@@ -27,14 +29,20 @@ export function CatalogListing({
   sort,
   descending,
   sidebar,
-  footer,
+  page,
+  pages,
+  loadMore,
 }: {
   items: ProductListItem[];
   rates: CurrencyRate[];
   sort: string;
   descending: boolean;
   sidebar: React.ReactNode;
-  footer: React.ReactNode;
+  /** Поточна сторінка й скільки їх усього */
+  page: number;
+  pages: number;
+  /** Товари вказаної сторінки: для кнопки «Показати ще товари» */
+  loadMore: (page: number) => Promise<ProductListItem[]>;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -44,6 +52,50 @@ export function CatalogListing({
   const [filterOpen, setFilterOpen] = useState(false);
   const currencies = useMemo(() => buildCurrencies(rates), [rates]);
   const currency = currencies.find((c) => c.code === currencyCode) ?? UAH;
+
+  /* Дозавантажені сторінки живуть до зміни адреси: інше сортування, фільтр
+     чи перехід на сторінку віддають свіжий список з сервера */
+  const key = params.toString();
+  const [more, setMore] = useState<{
+    key: string;
+    items: ProductListItem[];
+    pages: number;
+  }>({ key: "", items: [], pages: 0 });
+  const [loading, setLoading] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const loaded = more.key === key ? more : { items: [], pages: 0 };
+  const through = page + loaded.pages;
+
+  const shownIds = new Set(items.map((p) => p.id));
+  const all = [...items, ...loaded.items.filter((p) => !shownIds.has(p.id))];
+
+  const showMore = async () => {
+    setLoading(true);
+    setFailed(false);
+    try {
+      const next = await loadMore(through + 1);
+      setMore((prev) => {
+        const base = prev.key === key ? prev : { key, items: [], pages: 0 };
+        return {
+          key,
+          items: [...base.items, ...next],
+          pages: base.pages + 1,
+        };
+      });
+    } catch {
+      setFailed(true);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const hrefFor = (p: number) => {
+    const query = new URLSearchParams(params.toString());
+    if (p > 1) query.set("page", String(p));
+    else query.delete("page");
+    const qs = query.toString();
+    return qs ? `${pathname}?${qs}` : pathname;
+  };
 
   /* Зміна сортування веде на першу сторінку: стара вже не відповідає порядку */
   const navigate = (next: { sort?: string; descending?: boolean }) => {
@@ -123,7 +175,7 @@ export function CatalogListing({
         ) : (
           <div className="flex min-w-0 flex-1 flex-col items-center gap-[30px] lg:gap-[60px]">
             <div className="grid w-full grid-cols-2 gap-2.5 md:grid-cols-4 lg:gap-4">
-              {items.map((p) => (
+              {all.map((p) => (
                 <ProductCard
                   key={p.id}
                   product={p}
@@ -132,7 +184,27 @@ export function CatalogListing({
                 />
               ))}
             </div>
-            {footer}
+            {through < pages && (
+              <button
+                type="button"
+                onClick={showMore}
+                disabled={loading}
+                className="flex cursor-pointer items-center gap-2.5 px-2.5 py-2 text-[16px] font-semibold uppercase leading-[1.5] text-orange transition-opacity hover:opacity-80 disabled:cursor-default disabled:opacity-60"
+              >
+                <RefreshCw
+                  aria-hidden
+                  className={cn("size-6", loading && "animate-spin")}
+                />
+                {failed ? "Не вдалося, ще раз" : "Показати ще товари"}
+              </button>
+            )}
+            <Pagination
+              current={page}
+              through={through}
+              total={pages}
+              hrefFor={hrefFor}
+              className="max-md:w-full max-md:justify-between md:justify-center"
+            />
           </div>
         )}
       </div>

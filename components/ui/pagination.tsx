@@ -5,8 +5,11 @@ import { cn } from "@/lib/cn";
 /** Скільки номерів показуємо обабіч поточної сторінки */
 const AROUND = 1;
 
-/** Номери з трикрапками: 1 … 4 5 6 … 20 */
-export function pageList(current: number, total: number) {
+/**
+ * Номери з трикрапками: 1 … 4 5 6 … 20. `through` — остання сторінка, яку
+ * вже дозавантажено кнопкою «Показати ще»: усі від поточної до неї активні.
+ */
+export function pageList(current: number, total: number, through = current) {
   const out: (number | "gap")[] = [];
   let last = 0;
 
@@ -14,7 +17,7 @@ export function pageList(current: number, total: number) {
     const keep =
       p === 1 ||
       p === total ||
-      (p >= current - AROUND && p <= current + AROUND);
+      (p >= current - AROUND && p <= through + AROUND);
     if (!keep) continue;
     if (last && p - last > 1) out.push("gap");
     out.push(p);
@@ -47,8 +50,11 @@ export function Pagination({
   total,
   hrefFor,
   className,
+  through = current,
 }: {
   current: number;
+  /** Остання дозавантажена сторінка (за замовчуванням — поточна) */
+  through?: number;
   /** Загальна кількість сторінок */
   total: number;
   hrefFor: (page: number) => string;
@@ -77,7 +83,7 @@ export function Pagination({
         </span>
       )}
 
-      {pageList(current, total).map((p, i) =>
+      {pageList(current, total, through).map((p, i) =>
         p === "gap" ? (
           <span
             key={`gap-${i}`}
@@ -94,7 +100,7 @@ export function Pagination({
             className={cn(
               item,
               "tnum",
-              p === current
+              p >= current && p <= through
                 ? "border border-orange bg-orange text-white"
                 : "hover:bg-peach",
             )}
@@ -104,9 +110,9 @@ export function Pagination({
         ),
       )}
 
-      {current < total ? (
+      {through < total ? (
         <Link
-          href={hrefFor(current + 1)}
+          href={hrefFor(through + 1)}
           rel="next"
           aria-label="Наступна сторінка"
           className={cn(item, "hover:bg-peach")}

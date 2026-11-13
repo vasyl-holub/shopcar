@@ -126,3 +126,21 @@ export async function clearCartAction() {
      раптом частина позицій не видалилась */
   return { count: await getCartCount() };
 }
+
+/**
+ * Додає в кошик одразу кілька пропозицій (по одній штуці): для кнопки
+ * «Додати вибране в кошик». Повертає, скільки не вдалося додати.
+ */
+export async function addManyToCartAction(itemIds: string[]) {
+  let failed = 0;
+  for (const id of itemIds) {
+    try {
+      await addCartItem(id, 1);
+    } catch {
+      failed += 1;
+    }
+  }
+
+  revalidatePath("/cart");
+  return { count: await getCartCount(), failed };
+}

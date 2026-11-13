@@ -13,19 +13,17 @@ const input =
   "w-full rounded-[4px] border bg-white px-[15px] py-2.5 text-[14px] leading-[1.4] text-shop-black outline-none transition-colors placeholder:text-shop-black focus:border-orange";
 
 /**
- * Форма «Залиште свій відгук» за макетом: оцінка зірками 40px, ім'я,
- * e-mail і повідомлення. Надсилає лише залогінений клієнт — бекенд
+ * Форма «Залиште свій відгук» за макетом: оцінка зірками 40px, ім'я
+ * і повідомлення. Надсилає лише залогінений клієнт — бекенд
  * без входу відгук не приймає, тому гостю показуємо підказку.
  */
 export function ReviewForm({
   productPk,
   defaultName = "",
-  defaultEmail = "",
   loggedIn,
 }: {
   productPk: string;
   defaultName?: string;
-  defaultEmail?: string;
   loggedIn: boolean;
 }) {
   const [state, action, pending] = useActionState(addReviewAction, EMPTY);
@@ -120,15 +118,6 @@ export function ReviewForm({
           placeholder="Ваше ім’я*"
           aria-label="Ваше ім’я"
           autoComplete="name"
-          className={cn(input, "border-[#e6e6e6]")}
-        />
-        <input
-          name="email"
-          type="email"
-          defaultValue={defaultEmail}
-          placeholder="E-mail"
-          aria-label="E-mail"
-          autoComplete="email"
           className={cn(input, "border-[#e6e6e6]")}
         />
         <textarea

@@ -18,6 +18,8 @@ import { Tooltip } from "@/components/ui/tooltip";
 import { ProductPhoto } from "@/components/catalog/product-photo";
 import { BuyButton } from "@/components/shop/buy-button";
 import { StoreIcon } from "@/components/shop/store-icon";
+import { hasStock, isUnlimitedCount } from "@/lib/stock";
+import { useProductExtras } from "@/components/product/use-product-extras";
 import { RangeFilter, type Range } from "@/components/catalog/range-filter";
 import { Pager } from "@/components/ui/pager";
 import type { ProductOffer } from "@/lib/api/product";
@@ -51,7 +53,26 @@ const BRANDS_VISIBLE = 7;
 
 /* ---------------------------------------------------------- Допоміжне */
 
-const inStock = (o: ProductOffer) => o.canBuy && (o.count ?? 0) > 0;
+/** 0 — безліміт (зелена галочка), -1 — немає в наявності: див. lib/stock.ts */
+const isUnlimited = (o: ProductOffer) => o.canBuy && isUnlimitedCount(o.count);
+const inStock = (o: ProductOffer) => hasStock(o.canBuy, o.count);
+
+/**
+ * Великі залишки чужих складів ховаємо за налаштуванням бекенда: «>5».
+ * Свої магазини показують справжню кількість.
+ */
+const countText = (o: ProductOffer, maxCount: number) => {
+  const count = o.count ?? 0;
+  if (count < 0) return "—";
+  return maxCount > 0 && !o.store?.isLocal && count > maxCount
+    ? `>${maxCount}`
+    : String(count);
+};
+
+/** Склади магазину завжди вище за решту, всередині групи — дешевші зверху */
+const byStore = (a: ProductOffer, b: ProductOffer) =>
+  Number(Boolean(b.store?.isLocal)) - Number(Boolean(a.store?.isLocal)) ||
+  (a.price ?? Infinity) - (b.price ?? Infinity);
 const daysOf = (o: ProductOffer) => o.maxDays ?? o.minDays ?? 0;
 
 function bounds(values: number[]): Range {
@@ -194,10 +215,12 @@ function OfferLine({
   offer,
   product,
   currency,
+  maxCount,
 }: {
   offer: ProductOffer;
   product: OfferProduct;
   currency: Currency;
+  maxCount: number;
 }) {
   const store = offer.store;
   const days = offer.deliveryDays ?? "—";
@@ -213,11 +236,16 @@ function OfferLine({
 
   /* У колонці строку стоїть назва складу (код на кшталт ASG_LV), а сам
      строк, номер складу й час оновлення — в підказці над значком */
-  const label = store?.name || days;
+  /* Гостям бекенд не віддає назву складу, але в публічній примітці магазину
+     є місто: «Товар на складі м. Львів, магазин на Городоцькій» */
+  const city = store?.isLocal
+    ? /м\.\s*([^,]+)/.exec(store.publicNote ?? "")?.[1]?.trim()
+    : undefined;
+  const label = store?.name || city || days;
   const daysText = (
     <span
       className={cn(
-        "whitespace-nowrap text-[14px] font-semibold leading-[1.4] lg:text-[16px] lg:leading-[1.5]",
+        "min-w-0 break-words text-[14px] font-semibold leading-[1.3] lg:text-[16px] lg:leading-[1.3]",
         store?.isLocal ? "text-shop-green" : "text-orange",
       )}
     >
@@ -269,16 +297,10 @@ function OfferLine({
 
   return (
     <div className="grid min-h-[42px] grid-cols-[120px_40px_70px_92px] items-center gap-x-1.5 md:grid-cols-[120px_30px_70px_140px] md:gap-x-5 lg:grid-cols-[148px_40px_80px_128px] lg:gap-10">
-      <div className="flex items-center gap-2.5 lg:gap-5">
+      <div className="flex min-w-0 items-center gap-2.5 lg:gap-5">
         <span className="flex w-[44px] shrink-0 items-center gap-1 lg:w-[52px]">
           {store?.isLocal ? (
-            storeTip(
-              <StoreIcon
-                iconUrl={store.iconUrl}
-                fallback="storage"
-                className="h-5 lg:h-6"
-              />,
-            )
+            storeTip(<StoreIcon fallback="storage" className="h-5 lg:h-6" />)
           ) : (
             <>
               {offer.note && (
@@ -307,7 +329,11 @@ function OfferLine({
         </span>
 
         {typeof store?.workUpTo === "number" ? (
-          <Tooltip label="Час роботи складу" trigger={daysText}>
+          <Tooltip
+            label="Час роботи складу"
+            trigger={daysText}
+            className="min-w-0"
+          >
             <span className="whitespace-nowrap">
               Працює до:{" "}
               <span className="text-muted">
@@ -321,10 +347,10 @@ function OfferLine({
       </div>
 
       <span className="flex items-center">
-        {store?.isLocal && available ? (
+        {isUnlimited(offer) ? (
           <svg
             role="img"
-            aria-label={`В наявності: ${offer.count}`}
+            aria-label="В наявності"
             viewBox="0 0 20 20"
             className="size-5"
           >
@@ -340,7 +366,7 @@ function OfferLine({
           </svg>
         ) : (
           <span className="tnum text-[12px] font-semibold leading-[1.33] lg:text-[16px] lg:leading-[1.5]">
-            {offer.count ?? 0}
+            {countText(offer, maxCount)}
           </span>
         )}
       </span>
@@ -403,7 +429,11 @@ function IconSlot({
   const trigger = onClick ? (
     <button
       type="button"
-      onClick={onClick}
+      onClick={(e) => {
+        /* Фокус на кнопці тримав би підказку відкритою й після закриття вікна */
+        e.currentTarget.blur();
+        onClick();
+      }}
       aria-label={label}
       className="flex cursor-pointer"
     >
@@ -446,6 +476,10 @@ function ProductIcons({
   className?: string;
 }) {
   const [photoOpen, setPhotoOpen] = useState(false);
+  const [videoOpen, setVideoOpen] = useState(false);
+  const extras = useProductExtras(product.key);
+  const cars = extras?.cars ?? [];
+  const videos = extras?.videos ?? [];
   const icon = "size-5 text-orange lg:size-6";
 
   return (
@@ -466,19 +500,34 @@ function ProductIcons({
               </span>
             )}
             {(product.specs ?? []).slice(0, 10).map((s, i) => (
-              <span key={`${s.label}-${i}`} className="flex gap-[5px]">
-                <span className="shrink-0">{s.label}:</span>
-                <span className="text-muted">{s.value}</span>
+              <span key={`${s.label}-${i}`} className="break-words">
+                {s.label}: <span className="text-muted">{s.value}</span>
               </span>
             ))}
           </span>
         }
       />
       <IconSlot
-        active={Boolean(product.fits)}
+        active={cars.length > 0 || Boolean(product.fits)}
         label="На які авто підходить"
         icon={<CarFront aria-hidden className={icon} strokeWidth={1.75} />}
-        tip={<span className="block max-w-[300px]">{product.fits}</span>}
+        tip={
+          cars.length > 0 ? (
+            <span className="flex max-h-[320px] max-w-[320px] flex-col gap-1 overflow-hidden">
+              {cars.map((c) => (
+                <span key={`${c.brand}${c.model}`}>
+                  <span className="font-semibold">{c.brand}</span>{" "}
+                  <span className="text-muted">{c.model}</span>
+                </span>
+              ))}
+              {extras && extras.moreCars > 0 && (
+                <span className="text-muted">та ще {extras.moreCars}</span>
+              )}
+            </span>
+          ) : (
+            <span className="block max-w-[300px]">{product.fits}</span>
+          )
+        }
       />
       <IconSlot
         active={Boolean(product.image)}
@@ -500,11 +549,33 @@ function ProductIcons({
         }
       />
       <IconSlot
-        active={false}
+        active={videos.length > 0}
         label="Відео про товар"
+        onClick={() => setVideoOpen(true)}
         icon={<PlayCircle aria-hidden className={icon} strokeWidth={1.75} />}
-        tip={null}
+        tip={<span>Відео про товар</span>}
       />
+      {videoOpen && videos.length > 0 && (
+        <Modal title={product.name} wide onClose={() => setVideoOpen(false)}>
+          <div className="flex flex-col gap-5">
+            {videos.map((v) => (
+              <div
+                key={v.embed}
+                className="aspect-video w-full overflow-hidden rounded-[4px] bg-black"
+              >
+                <iframe
+                  src={v.embed}
+                  title={`Відео: ${product.name}`}
+                  loading="lazy"
+                  allow="accelerometer; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+                  allowFullScreen
+                  className="size-full border-0"
+                />
+              </div>
+            ))}
+          </div>
+        </Modal>
+      )}
       {photoOpen && product.image && (
         <Modal title={product.name} onClose={() => setPhotoOpen(false)}>
           <div className="flex flex-col items-center gap-3 p-2.5 text-center">
@@ -563,10 +634,12 @@ function ProductBlock({
   product,
   offers,
   currency,
+  maxCount,
 }: {
   product: OfferProduct;
   offers: ProductOffer[];
   currency: Currency;
+  maxCount: number;
 }) {
   const [all, setAll] = useState(false);
   const [page, setPage] = useState(1);
@@ -579,7 +652,13 @@ function ProductBlock({
   const lines = (
     <div className="flex w-full flex-col gap-2.5 lg:gap-5">
       {shown.map((o) => (
-        <OfferLine key={o.id} offer={o} product={product} currency={currency} />
+        <OfferLine
+          key={o.id}
+          offer={o}
+          product={product}
+          currency={currency}
+          maxCount={maxCount}
+        />
       ))}
     </div>
   );
@@ -672,17 +751,29 @@ function Highlight({
   product,
   offer,
   currency,
+  maxCount,
 }: {
   title: string;
   icon: React.ReactNode;
   product: OfferProduct;
   offer: ProductOffer;
   currency: Currency;
+  maxCount: number;
 }) {
   const waiting =
     offer.store?.isLocal || (offer.minDays ?? 0) === 0
       ? "В наявності"
       : (offer.deliveryDays ?? "—");
+
+  /* Аналог веде на власну сторінку; власний товар — це поточна сторінка */
+  const open = (text: string) =>
+    product.href ? (
+      <Link href={product.href} className="transition-colors hover:text-orange">
+        {text}
+      </Link>
+    ) : (
+      text
+    );
 
   return (
     <div className="flex w-full items-start justify-between gap-[50px] rounded-[4px] border border-line bg-white py-2.5 pr-2.5 lg:w-[356px] lg:max-w-full lg:gap-0 lg:py-3 lg:pr-3">
@@ -694,16 +785,21 @@ function Highlight({
         <div className="flex h-[136px] w-[224px] max-w-full flex-col gap-6 pl-2.5 text-shop-black lg:pl-4">
           <div className="flex flex-col gap-2">
             <p className="text-[14px] font-semibold leading-[1.4]">
-              {[product.brand, product.num].filter(Boolean).join(" ")}
+              {open([product.brand, product.num].filter(Boolean).join(" "))}
             </p>
             <p className="text-[12px] leading-[1.33]">Артикул</p>
             <p className="line-clamp-1 text-[14px] leading-[1.4]">
-              {product.name}
+              {open(product.name)}
             </p>
           </div>
           <div className="flex flex-col gap-2 text-[12px] leading-[1.33]">
             <p className="flex gap-2.5">
-              Доступно: <span className="font-semibold">{offer.count}шт</span>
+              Доступно:{" "}
+              <span className="font-semibold">
+                {isUnlimited(offer)
+                  ? "Безліміт"
+                  : `${countText(offer, maxCount)}шт`}
+              </span>
             </p>
             <p className="flex gap-2.5">
               Очікується: <span className="font-semibold">{waiting}</span>
@@ -753,10 +849,13 @@ export function ProductOffers({
   own,
   analogues,
   rates,
+  maxCount = 0,
 }: {
   own: OfferProduct;
   analogues: OfferProduct[];
   rates: CurrencyRate[];
+  /** Налаштування «Приховувати велику кількість на складі» */
+  maxCount?: number;
 }) {
   const currencies = useMemo(() => buildCurrencies(rates), [rates]);
   const [currencyCode, setCurrencyCode] = useState("UAH");
@@ -813,17 +912,21 @@ export function ProductOffers({
     return true;
   };
 
-  /* Склади кожного товару: найдешевші зверху, щоб «показати всі» ховало
-     дорожчі, а не вигідні */
+  /* Склади кожного товару: свої магазини зверху, далі найдешевші, щоб
+     «показати всі» ховало дорожчі, а не вигідні */
   const visible = (p: OfferProduct) =>
-    p.offers
-      .filter((o) => pass(p, o))
-      .sort((a, b) => (a.price ?? Infinity) - (b.price ?? Infinity));
+    p.offers.filter((o) => pass(p, o)).sort(byStore);
 
   const ownOffers = visible(own);
   const analogueBlocks = analogues
     .map((p) => ({ p, offers: visible(p) }))
-    .filter((b) => b.offers.length > 0);
+    .filter((b) => b.offers.length > 0)
+    /* Аналоги, що є в наших магазинах, — першими (сортування стабільне) */
+    .sort(
+      (a, b) =>
+        Number(b.offers.some((o) => o.store?.isLocal)) -
+        Number(a.offers.some((o) => o.store?.isLocal)),
+    );
 
   /* Виділені пропозиції беремо з того, що пройшло фільтри й є в наявності */
   const buyable = flat.filter(({ p, o }) => pass(p, o) && inStock(o));
@@ -1003,6 +1106,7 @@ export function ProductOffers({
                   product={cheapest.p}
                   offer={cheapest.o}
                   currency={currency}
+                  maxCount={maxCount}
                 />
               )}
               {fastest && (
@@ -1014,6 +1118,7 @@ export function ProductOffers({
                   product={fastest.p}
                   offer={fastest.o}
                   currency={currency}
+                  maxCount={maxCount}
                 />
               )}
               {local && (
@@ -1025,6 +1130,7 @@ export function ProductOffers({
                   product={local.p}
                   offer={local.o}
                   currency={currency}
+                  maxCount={maxCount}
                 />
               )}
             </div>
@@ -1043,6 +1149,7 @@ export function ProductOffers({
                     product={own}
                     offers={ownOffers}
                     currency={currency}
+                    maxCount={maxCount}
                   />
                 </section>
               )}
@@ -1061,6 +1168,7 @@ export function ProductOffers({
                         product={p}
                         offers={offers}
                         currency={currency}
+                        maxCount={maxCount}
                       />
                     </section>
                   ))}

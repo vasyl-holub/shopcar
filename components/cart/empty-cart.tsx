@@ -7,7 +7,7 @@ import {
 } from "@/components/ui/icons";
 
 const hints = [
-  { icon: SearchIcon, text: "Пошук за номером, OEM або VIN" },
+  { icon: SearchIcon, text: "Пошук за номером або OEM" },
   { icon: TruckIcon, text: "Доставка по всій Україні за 2–4 дні" },
   { icon: TargetArrowIcon, text: "Не знайшли — підберемо вручну" },
 ];
@@ -26,8 +26,8 @@ export function EmptyCart() {
           У кошику поки порожньо
         </h2>
         <p className="text-[16px] leading-[1.5] text-grey-700">
-          Введіть номер деталі, OEM-код або VIN — і ми покажемо ціну, наявність
-          та строк поставки.
+          Введіть номер деталі або OEM-код — і ми покажемо ціну, наявність та
+          строк поставки.
         </p>
       </div>
 
@@ -43,8 +43,8 @@ export function EmptyCart() {
           type="search"
           autoComplete="off"
           spellCheck={false}
-          aria-label="Номер деталі, OEM-код або VIN"
-          placeholder="Номер деталі, OEM-код або VIN"
+          aria-label="Номер деталі або OEM-код"
+          placeholder="Номер деталі або OEM-код"
           className="h-full min-w-0 flex-1 bg-transparent px-5 text-[16px] leading-[1.5] text-black-900 placeholder:text-grey-600 focus:outline-none"
         />
         <button

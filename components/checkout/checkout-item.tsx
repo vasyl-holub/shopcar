@@ -141,7 +141,7 @@ export function CheckoutItem({
       </p>
       <p className="hidden items-center gap-2.5 text-[12px] leading-[1.33] lg:flex">
         <StoreIcon
-          iconUrl={item.store?.iconUrl}
+          iconUrl={item.store?.isLocalStore ? null : item.store?.iconUrl}
           fallback={stockIcon(item)}
           className="h-6 shrink-0"
         />
@@ -234,7 +234,7 @@ export function CheckoutItem({
 
         <p className="flex items-center gap-2.5 py-[9px] text-[12px] leading-[1.33] text-black">
           <StoreIcon
-            iconUrl={item.store?.iconUrl}
+            iconUrl={item.store?.isLocalStore ? null : item.store?.iconUrl}
             fallback={stockIcon(item)}
             className="h-6 shrink-0"
           />

@@ -28,13 +28,11 @@ export function ReviewsPanel({
   items,
   loggedIn,
   defaultName,
-  defaultEmail,
 }: {
   productPk: string;
   items: Review[];
   loggedIn: boolean;
   defaultName: string;
-  defaultEmail: string;
 }) {
   const [shown, setShown] = useState(STEP);
   const visible = items.slice(0, shown);
@@ -46,7 +44,6 @@ export function ReviewsPanel({
           productPk={productPk}
           loggedIn={loggedIn}
           defaultName={defaultName}
-          defaultEmail={defaultEmail}
         />
       </div>
 

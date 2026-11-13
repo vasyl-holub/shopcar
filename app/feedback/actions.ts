@@ -1,7 +1,7 @@
 "use server";
 
 import { addFeedback } from "@/lib/api/feedback";
-import type { ApiFieldError } from "@/lib/api/auth";
+import { getCurrentUser, type ApiFieldError } from "@/lib/api/auth";
 import { GraphQLRequestError } from "@/lib/api/graphql";
 
 export type FeedbackFormState = {
@@ -56,6 +56,15 @@ export async function feedbackAction(
     text: String(formData.get("text") ?? "").trim(),
   };
   const captcha = String(formData.get("captcha") ?? "");
+
+  /* Увійшовшому клієнту форма не питає контактів: беремо їх з профілю.
+     Заповнене вручну (форма на /feedback) має пріоритет */
+  const user = await getCurrentUser();
+  if (user) {
+    values.name ||= user.fullName || user.firstName || "";
+    values.email ||= user.email ?? "";
+    values.phone ||= user.phone ?? "";
+  }
 
   const fieldErrors: Record<string, string> = {};
 

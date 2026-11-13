@@ -19,9 +19,10 @@ export const site = {
   city: "м. Самбір, вул. Вокзальна, 3-й район залізничного вокзалу",
   workingHours: "Пн–Пт: 9:00–17:00, Сб: 9:00–13:00",
   replyTime: "Відповідаємо протягом 5–10 хв",
-  viber: "viber://chat?number=%2B380507135500",
-  telegram: "https://t.me/westpart",
-  whatsapp: "https://wa.me/380971002808",
+  /* Мессенджери ведуть через /go/…: адресу бере сервер із текстових блоків бекенда */
+  viber: "/go/viber",
+  telegram: "/go/telegram",
+  whatsapp: "/go/whatsapp",
 } as const;
 
 /** Смуга під шапкою: регіон і найближчий пункт видачі */

@@ -319,3 +319,17 @@ export async function notifyPaymentAction(
   revalidatePath("/account");
   return { ok: true };
 }
+
+/** Прибирає з обраного одразу кілька товарів: «Очистити вибране» */
+export async function removeFavoritesAction(productIds: string[]) {
+  let failed = 0;
+  for (const id of productIds) {
+    try {
+      await removeFavorite(id);
+    } catch {
+      failed += 1;
+    }
+  }
+  revalidatePath("/account/favorites");
+  return { failed };
+}

@@ -6,6 +6,7 @@ import {
   getUserTypeLabels,
 } from "@/lib/api/account";
 import { getOrderOptions } from "@/lib/api/cart";
+import { getSiteKey } from "@/lib/api/auth";
 import { profileOptionsAction } from "@/app/account/profile-details-action";
 
 export const metadata: Metadata = {
@@ -14,13 +15,14 @@ export const metadata: Metadata = {
 };
 
 export default async function ProfilePage() {
-  const [profile, options, orderOptions, typeLabels, emailEditable] =
+  const [profile, options, orderOptions, typeLabels, emailEditable, siteKey] =
     await Promise.all([
       getProfile(),
       profileOptionsAction(),
       getOrderOptions(),
       getUserTypeLabels(),
       canChangeEmail(),
+      getSiteKey(),
     ]);
 
   if (!profile) {
@@ -35,6 +37,7 @@ export default async function ProfilePage() {
     <ProfileSections
       profile={profile}
       canChangeEmail={emailEditable}
+      siteKey={siteKey}
       userTypeLabel={typeLabels[String(profile.userType)] ?? ""}
       countries={options.countries}
       regions={options.regions}

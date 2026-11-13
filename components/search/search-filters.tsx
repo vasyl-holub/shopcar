@@ -24,7 +24,7 @@ function Radio({ checked }: { checked: boolean }) {
 }
 
 /** Згортна група з заголовком і шевроном — як у бічній панелі каталогу */
-function Group({
+export function Group({
   title,
   children,
 }: {
@@ -52,7 +52,7 @@ function Group({
   );
 }
 
-function Field({
+export function Field({
   name,
   value,
   onChange,

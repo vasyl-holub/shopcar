@@ -1,5 +1,6 @@
 "use client";
 
+import { hasStock } from "@/lib/stock";
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import {
@@ -36,8 +37,8 @@ export function PartActions({
   priceLabel?: string;
 }) {
   const offer = product.bestOffer;
-  const available = Boolean(offer?.canBuy && (offer?.count ?? 0) > 0);
-  const max = offer?.count ?? 99;
+  const available = hasStock(offer?.canBuy, offer?.count);
+  const max = offer?.count && offer.count > 0 ? offer.count : 99;
 
   const [count, setCount] = useState(1);
   const [state, setState] = useState<"idle" | "added" | "error">("idle");

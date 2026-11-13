@@ -5,6 +5,8 @@ import { PromoStrip } from "@/components/shop/promo";
 import { CheckoutForm } from "@/components/checkout/checkout-form";
 import { canChangeDelivery, getCart, getOrderOptions } from "@/lib/api/cart";
 import { getCurrentUser, getRegistrationFormData } from "@/lib/api/auth";
+import { getProfile } from "@/lib/api/account";
+import { splitRecipient } from "@/lib/recipient";
 import { getDeliveryChoices, getPickupStores } from "@/lib/api/delivery";
 import { homePromo } from "@/lib/home-content";
 
@@ -17,14 +19,19 @@ export default async function CheckoutPage() {
   const user = await getCurrentUser();
 
   /* Гість: «замовлення в один клік» — лише контакти й капча */
-  const [cart, options, choices, full, shops, form] = await Promise.all([
-    getCart({ activeOnly: true }),
-    user ? getOrderOptions() : { deliveries: [], payMethods: [] },
-    user ? getDeliveryChoices() : { regions: [], serviceTypes: [] },
-    user ? canChangeDelivery() : false,
-    user ? getPickupStores() : [],
-    user ? undefined : getRegistrationFormData().catch(() => undefined),
-  ]);
+  const [cart, options, choices, full, shops, form, profile] =
+    await Promise.all([
+      getCart({ activeOnly: true }),
+      user ? getOrderOptions() : { deliveries: [], payMethods: [] },
+      user ? getDeliveryChoices() : { regions: [], serviceTypes: [] },
+      user ? canChangeDelivery() : false,
+      user ? getPickupStores() : [],
+      user ? undefined : getRegistrationFormData().catch(() => undefined),
+      user ? getProfile() : null,
+    ]);
+
+  /* Одержувач і його телефон із даних доставки мають перевагу над контактами замовника */
+  const recipient = splitRecipient(profile?.recipient);
 
   return (
     <>
@@ -53,9 +60,17 @@ export default async function CheckoutPage() {
             serviceTypes={choices.serviceTypes}
             shops={shops}
             guestSiteKey={user ? undefined : (form?.siteKey ?? "")}
-            defaultName={user?.fullName || user?.firstName || ""}
-            defaultPhone={user?.phone ?? ""}
+            defaultName={
+              recipient.name || user?.fullName || user?.firstName || ""
+            }
+            defaultPhone={recipient.phone || (user?.phone ?? "")}
             defaultEmail={user?.email ?? ""}
+            profileDefaults={{
+              delivery: profile?.deliveryId ?? undefined,
+              payMethod: profile?.payMethodId ?? undefined,
+              address: profile?.address || undefined,
+              shop: profile?.deliveryInfo || undefined,
+            }}
           />
         </section>
       </PageContainer>

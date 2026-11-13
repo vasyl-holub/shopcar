@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { PageContainer } from "@/components/ui/page-container";
 import { Breadcrumbs, type Crumb } from "@/components/ui/breadcrumbs";
-import { Pagination } from "@/components/ui/pagination";
 import { CategoryCard } from "@/components/shop/category-card";
 import { SpecialOffers } from "@/components/product/special-offers";
 import { PromoBanner, PromoStrip } from "@/components/shop/promo";
@@ -13,6 +12,7 @@ import { getCategory } from "@/lib/api/catalog";
 import { getCurrencyRates } from "@/lib/api/currency";
 import { getProductsByGroup, getPromoProducts } from "@/lib/api/product";
 import { getCategorySeo } from "@/lib/api/seo";
+import { loadMoreProductsAction } from "./load-more-action";
 import { homePromo } from "@/lib/home-content";
 
 /* Сітка макета — чотири колонки по два ряди */
@@ -99,20 +99,6 @@ export default async function CategoryPage({
   ];
 
   const pages = Math.ceil(products.total / PER_PAGE);
-  const basePath = `/catalog/category/${category.slug}`;
-
-  /* Сторінки зберігають сортування й вибрані бренди */
-  const hrefFor = (p: number) => {
-    const query = new URLSearchParams();
-    if (p > 1) query.set("page", String(p));
-    if (sp.sort) query.set("sort", sort);
-    if (descending) query.set("dir", "desc");
-    if (brandIds.length) query.set("brand", brandIds.join(","));
-    for (const [code, values] of Object.entries(attributeIds))
-      values.forEach((v) => query.append(ATTR_PREFIX + code, v));
-    const qs = query.toString();
-    return qs ? `${basePath}?${qs}` : basePath;
-  };
 
   return (
     <>
@@ -156,14 +142,16 @@ export default async function CategoryPage({
                 selectedAttributes={attributeIds}
               />
             }
-            footer={
-              <Pagination
-                current={page}
-                total={pages}
-                hrefFor={hrefFor}
-                className="max-md:w-full max-md:justify-between md:justify-center"
-              />
-            }
+            page={page}
+            pages={pages}
+            loadMore={loadMoreProductsAction.bind(null, {
+              slug: category.slug,
+              sort,
+              descending,
+              brandIds,
+              attributeIds,
+              perPage: PER_PAGE,
+            })}
           />
         )}
       </PageContainer>

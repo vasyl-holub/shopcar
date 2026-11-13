@@ -12,7 +12,14 @@ const field =
   "w-full rounded-[4px] border bg-white px-[11px] text-[14px] leading-[1.4] text-shop-black placeholder:text-shop-black focus:border-orange focus:outline-none";
 
 /** Форма «Зворотній зв'язок» у футері: надсилає ту саму дію, що й /feedback */
-export function FooterForm({ siteKey }: { siteKey: string }) {
+export function FooterForm({
+  siteKey,
+  signedIn = false,
+}: {
+  siteKey: string;
+  /** Увійшов у кабінет: ім'я й контакти беремо з профілю, лишається повідомлення */
+  signedIn?: boolean;
+}) {
   const [state, action, pending] = useActionState(feedbackAction, EMPTY);
   const err = state.fieldErrors ?? {};
   const val = state.values ?? {};
@@ -34,66 +41,70 @@ export function FooterForm({ siteKey }: { siteKey: string }) {
         </p>
       )}
 
-      <div>
-        <input
-          name="name"
-          autoComplete="name"
-          defaultValue={val.name}
-          placeholder="Ваше ім’я*"
-          aria-label="Ваше ім’я"
-          aria-invalid={Boolean(err.name)}
-          className={cn(
-            field,
-            "h-[42px]",
-            err.name ? "border-danger-500" : "border-line",
-          )}
-        />
-        {err.name && (
-          <p className="mt-1 text-[12px] text-danger-700">{err.name}</p>
-        )}
-      </div>
+      {!signedIn && (
+        <>
+          <div>
+            <input
+              name="name"
+              autoComplete="name"
+              defaultValue={val.name}
+              placeholder="Ваше ім’я*"
+              aria-label="Ваше ім’я"
+              aria-invalid={Boolean(err.name)}
+              className={cn(
+                field,
+                "h-[42px]",
+                err.name ? "border-danger-500" : "border-line",
+              )}
+            />
+            {err.name && (
+              <p className="mt-1 text-[12px] text-danger-700">{err.name}</p>
+            )}
+          </div>
 
-      <div>
-        <input
-          name="phone"
-          type="tel"
-          inputMode="tel"
-          autoComplete="tel"
-          defaultValue={val.phone}
-          placeholder="Телефон*"
-          aria-label="Телефон"
-          aria-invalid={Boolean(err.phone)}
-          className={cn(
-            field,
-            "h-[42px]",
-            err.phone ? "border-danger-500" : "border-line",
-          )}
-        />
-        {err.phone && (
-          <p className="mt-1 text-[12px] text-danger-700">{err.phone}</p>
-        )}
-      </div>
+          <div>
+            <input
+              name="phone"
+              type="tel"
+              inputMode="tel"
+              autoComplete="tel"
+              defaultValue={val.phone}
+              placeholder="Телефон*"
+              aria-label="Телефон"
+              aria-invalid={Boolean(err.phone)}
+              className={cn(
+                field,
+                "h-[42px]",
+                err.phone ? "border-danger-500" : "border-line",
+              )}
+            />
+            {err.phone && (
+              <p className="mt-1 text-[12px] text-danger-700">{err.phone}</p>
+            )}
+          </div>
 
-      <div>
-        <input
-          name="email"
-          type="email"
-          inputMode="email"
-          autoComplete="email"
-          defaultValue={val.email}
-          placeholder="E-mail"
-          aria-label="E-mail"
-          aria-invalid={Boolean(err.email)}
-          className={cn(
-            field,
-            "h-[42px]",
-            err.email ? "border-danger-500" : "border-line",
-          )}
-        />
-        {err.email && (
-          <p className="mt-1 text-[12px] text-danger-700">{err.email}</p>
-        )}
-      </div>
+          <div>
+            <input
+              name="email"
+              type="email"
+              inputMode="email"
+              autoComplete="email"
+              defaultValue={val.email}
+              placeholder="E-mail"
+              aria-label="E-mail"
+              aria-invalid={Boolean(err.email)}
+              className={cn(
+                field,
+                "h-[42px]",
+                err.email ? "border-danger-500" : "border-line",
+              )}
+            />
+            {err.email && (
+              <p className="mt-1 text-[12px] text-danger-700">{err.email}</p>
+            )}
+          </div>
+        </>
+      )}
 
       <div>
         <textarea

@@ -1,3 +1,4 @@
+import { hasStock } from "@/lib/stock";
 import { gql } from "@/lib/api/graphql";
 import { getApiAuth } from "@/lib/api/session";
 import { getCategory } from "@/lib/api/catalog";
@@ -172,7 +173,7 @@ const SEARCH_TYPE: Record<MatchType, number> = {
 function uniqueProducts(rows: RawProduct[]) {
   const best = new Map<string, RawProduct>();
   const rank = (p: RawProduct) => [
-    p.price?.canBuy && (p.price.count ?? 0) > 0 ? 0 : 1,
+    hasStock(p.price?.canBuy, p.price?.count) ? 0 : 1,
     p.price?.priceUser ?? p.price?.priceOut ?? Infinity,
   ];
   for (const row of rows) {
