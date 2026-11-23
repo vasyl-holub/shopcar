@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
+import { useSearchNav } from "@/components/search/search-nav";
 import { Group } from "@/components/search/search-filters";
 import { cn } from "@/lib/cn";
 
@@ -98,7 +99,7 @@ export function ResultFilters({
   price: { min: number; max: number } | null;
   active: { brands: string[]; pmin: string; pmax: string; stock: boolean };
 }) {
-  const router = useRouter();
+  const { push } = useSearchNav();
   const pathname = usePathname();
   const params = useSearchParams();
   const [showAll, setShowAll] = useState(false);
@@ -108,7 +109,7 @@ export function ResultFilters({
     edit(query);
     query.delete("page");
     const qs = query.toString();
-    router.push(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+    push(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
   };
 
   const toggleBrand = (name: string) =>

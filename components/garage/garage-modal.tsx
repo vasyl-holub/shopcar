@@ -19,6 +19,12 @@ import {
   garageOptionsAction,
 } from "@/app/account/garage-action";
 import type { CarAttributes, UserCar } from "@/lib/api/account";
+import {
+  loadHeaderCounts,
+  refreshHeaderCounts,
+  useCarsCount,
+} from "@/lib/header-counts";
+import { CountBadge } from "@/components/layout/count-badge";
 
 const NO_OPTIONS: CarAttributes = {
   types: [],
@@ -79,7 +85,10 @@ function AddCarForm({
   }, [car]);
 
   useEffect(() => {
-    if (state.ok) onSaved();
+    if (state.ok) {
+      void refreshHeaderCounts();
+      onSaved();
+    }
   }, [state.ok, onSaved]);
 
   return (
@@ -253,6 +262,7 @@ function CarList({
       data.set("carId", id);
       await deleteCarAction(data);
     }
+    void refreshHeaderCounts();
     onChanged();
   };
 
@@ -447,6 +457,11 @@ function GarageModal({ onClose }: { onClose: () => void }) {
 /** Значок гаража в шапці: відкриває вікно зі збереженими авто */
 export function GarageButton() {
   const [open, setOpen] = useState(false);
+  const count = useCarsCount();
+
+  useEffect(() => {
+    void loadHeaderCounts();
+  }, []);
 
   return (
     <>
@@ -457,6 +472,7 @@ export function GarageButton() {
         className="relative flex shrink-0 cursor-pointer items-center justify-center p-1 transition-opacity hover:opacity-80"
       >
         <ShopIcon name="garage" size={36} className="size-9" />
+        <CountBadge count={count} />
       </button>
       {open && <GarageModal onClose={() => setOpen(false)} />}
     </>

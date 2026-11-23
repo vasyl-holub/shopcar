@@ -5,6 +5,11 @@ import { Pagination } from "@/components/ui/pagination";
 import { PromoBanner, PromoStrip } from "@/components/shop/promo";
 import { SearchFilters } from "@/components/search/search-filters";
 import { ResultFilters } from "@/components/search/result-filters";
+import { SearchNavProvider } from "@/components/search/search-nav";
+import {
+  ActiveFilters,
+  type FilterChip,
+} from "@/components/search/active-filters";
 import { SearchResults } from "@/components/search/search-results";
 import { searchCatalog, type MatchType } from "@/lib/api/catalog-search";
 import { homePromo } from "@/lib/home-content";
@@ -67,25 +72,89 @@ export default async function CatalogSearchPage({
   const pmax = first(sp.pmax).replace(/\D/g, "");
   const stock = first(sp.stock) === "1";
 
+  const passBrand = (p: (typeof allItems)[number]) =>
+    !pickedBrands.length || pickedBrands.includes(p.brand ?? "");
+  const passPrice = (p: (typeof allItems)[number]) =>
+    (!pmin || (p.price ?? 0) >= Number(pmin)) &&
+    (!pmax || (p.price ?? 0) <= Number(pmax));
+  const passStock = (p: (typeof allItems)[number]) =>
+    !stock || hasStock(p.canBuy, p.count);
+
+  /* Фільтри впливають один на одного: список виробників рахуємо з товарів,
+     що пройшли ціну й наявність, а межі цін — з тих, що пройшли виробників
+     і наявність. Власний вибір фільтра в його ж списку не враховуємо, щоб
+     вибрати кількох виробників було можна. */
+  const forBrands = allItems.filter((p) => passPrice(p) && passStock(p));
+  const forPrice = allItems.filter((p) => passBrand(p) && passStock(p));
+
   const brandCounts = new Map<string, number>();
-  for (const p of allItems) {
+  for (const p of forBrands) {
     if (p.brand) brandCounts.set(p.brand, (brandCounts.get(p.brand) ?? 0) + 1);
   }
   const brandFacets = [...brandCounts]
     .map(([name, count]) => ({ name, count }))
     .sort((a, b) => a.name.localeCompare(b.name, "uk"));
-  const prices = allItems.flatMap((p) => (p.price != null ? [p.price] : []));
+  const prices = forPrice.flatMap((p) => (p.price != null ? [p.price] : []));
   const priceBounds = prices.length
     ? { min: Math.min(...prices), max: Math.max(...prices) }
     : null;
 
   const items = allItems.filter(
-    (p) =>
-      (!pickedBrands.length || pickedBrands.includes(p.brand ?? "")) &&
-      (!pmin || (p.price ?? 0) >= Number(pmin)) &&
-      (!pmax || (p.price ?? 0) <= Number(pmax)) &&
-      (!stock || hasStock(p.canBuy, p.count)),
+    (p) => passBrand(p) && passPrice(p) && passStock(p),
   );
+
+  /* Чипи застосованих умов: кожна знімається окремо */
+  const baseQuery = () => {
+    const query = new URLSearchParams();
+    for (const [key, value] of Object.entries(sp)) {
+      if (key === "page") continue;
+      for (const v of Array.isArray(value) ? value : [value]) {
+        if (v !== undefined) query.append(key, v);
+      }
+    }
+    return query;
+  };
+  const hrefWithout = (edit: (query: URLSearchParams) => void) => {
+    const query = baseQuery();
+    edit(query);
+    const qs = query.toString();
+    return qs ? `/catalog-search?${qs}` : "/catalog-search";
+  };
+  const typeLabel = {
+    exact: "",
+    starts: " (починається з)",
+    part: " (частина)",
+  };
+
+  const chips: FilterChip[] = [];
+  const add = (key: string, label: string, keys: string[], only?: string) =>
+    chips.push({
+      key: `${key}${only ?? ""}`,
+      label,
+      href: hrefWithout((q) => {
+        for (const k of keys) {
+          if (only !== undefined && k === "rb") {
+            const rest = q.getAll("rb").filter((b) => b !== only);
+            q.delete("rb");
+            rest.forEach((b) => q.append("rb", b));
+          } else q.delete(k);
+        }
+      }),
+    });
+  if (slug) add("slug", `Каталог: ${categoryName ?? slug}`, ["slug"]);
+  if (num) add("num", `Номер: ${num}${typeLabel[type]}`, ["num", "type"]);
+  if (brand) add("brand", `Бренд: ${brand}`, ["brand"]);
+  if (name) add("name", `Назва: ${name}`, ["name"]);
+  if (cross) add("cross", `Крос-номер: ${cross}`, ["cross"]);
+  if (ean) add("ean", `EAN: ${ean}`, ["ean"]);
+  const resultFilters = pickedBrands.length > 0 || pmin || pmax || stock;
+  if (stock) add("stock", "Тільки в наявності", ["stock"]);
+  for (const b of pickedBrands) add("rb", b, ["rb"], b);
+  if (pmin || pmax)
+    add("price", `Ціна: ${pmin || "…"}–${pmax || "…"} грн`, ["pmin", "pmax"]);
+  const resetHref = hrefWithout((q) => {
+    for (const k of ["rb", "pmin", "pmax", "stock"]) q.delete(k);
+  });
 
   const pages = Math.ceil(items.length / PER_PAGE);
   const shown = items.slice((page - 1) * PER_PAGE, page * PER_PAGE);
@@ -119,35 +188,44 @@ export default async function CatalogSearchPage({
           Результати пошуку
         </h1>
 
-        <SearchResults
-          items={shown}
-          sort={sort}
-          descending={descending}
-          sidebar={
-            <>
-              <SearchFilters
-                slug={slug}
-                categoryName={categoryName}
-                sort={first(sp.sort)}
-                descending={descending}
-                initial={{ type, num, brand, name, cross, ean }}
+        <SearchNavProvider>
+          <SearchResults
+            items={shown}
+            sort={sort}
+            descending={descending}
+            chips={
+              <ActiveFilters
+                chips={chips}
+                resetHref={resetHref}
+                canReset={Boolean(resultFilters)}
               />
-              <ResultFilters
-                brands={brandFacets}
-                price={priceBounds}
-                active={{ brands: pickedBrands, pmin, pmax, stock }}
+            }
+            sidebar={
+              <>
+                <SearchFilters
+                  slug={slug}
+                  categoryName={categoryName}
+                  sort={first(sp.sort)}
+                  descending={descending}
+                  initial={{ type, num, brand, name, cross, ean }}
+                />
+                <ResultFilters
+                  brands={brandFacets}
+                  price={priceBounds}
+                  active={{ brands: pickedBrands, pmin, pmax, stock }}
+                />
+              </>
+            }
+            footer={
+              <Pagination
+                current={page}
+                total={pages}
+                hrefFor={hrefFor}
+                className="max-md:w-full max-md:justify-between"
               />
-            </>
-          }
-          footer={
-            <Pagination
-              current={page}
-              total={pages}
-              hrefFor={hrefFor}
-              className="max-md:w-full max-md:justify-between"
-            />
-          }
-        />
+            }
+          />
+        </SearchNavProvider>
       </PageContainer>
 
       <PageContainer className="mt-[50px] lg:mt-20">

@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { HeartIcon } from "@/components/ui/icons";
 import { toggleFavoriteAction } from "@/app/account/actions";
 import { cn } from "@/lib/cn";
+import { refreshFavoritesCount } from "@/lib/favorites-count";
 
 export function FavoriteButton({
   productId,
@@ -28,6 +29,7 @@ export function FavoriteButton({
     startTransition(async () => {
       const res = await toggleFavoriteAction(productId, next);
       setActive(res.isFavorite);
+      void refreshFavoritesCount();
       if (res.error) setError(res.error);
     });
   };

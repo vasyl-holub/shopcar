@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { TyreStack } from "@/components/shop/tyre-stack";
 import { buttonClasses } from "@/components/ui/button";
+import { BannerRotator } from "@/components/shop/banner-rotator";
+import { getBanners } from "@/lib/api/adverts";
 import { cn } from "@/lib/cn";
 
 export type PromoContent = {
@@ -14,7 +16,18 @@ export type PromoContent = {
  * Мобільний варіант вищий: текст зверху, шини знизу ліворуч, кнопка
  * в правому нижньому куті.
  */
-export function PromoStrip({ brand, title, href }: PromoContent) {
+export async function PromoStrip({ brand, title, href }: PromoContent) {
+  /* Банери з адмінки (верхні) мають перевагу, а наш текстовий — запасний */
+  const banners = await getBanners("top");
+  if (banners.length > 0) {
+    return (
+      <BannerRotator
+        items={banners}
+        className="h-[133px] md:h-20 lg:h-[98px]"
+      />
+    );
+  }
+
   return (
     <section
       aria-label="Акція"
@@ -56,7 +69,18 @@ export function PromoStrip({ brand, title, href }: PromoContent) {
  * Великий помаранчевий банер між блоками товарів. На мобільному шини
  * стоять посередині між текстом і кнопкою.
  */
-export function PromoBanner({ brand, title, href }: PromoContent) {
+export async function PromoBanner({ brand, title, href }: PromoContent) {
+  /* Нижні банери з адмінки; без них лишається текстовий */
+  const banners = await getBanners("bottom");
+  if (banners.length > 0) {
+    return (
+      <BannerRotator
+        items={banners}
+        className="h-[251px] rounded-[4px] md:h-auto md:min-h-[184px] md:rounded-lg lg:h-[248px]"
+      />
+    );
+  }
+
   return (
     <section
       aria-label="Акція"

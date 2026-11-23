@@ -1,5 +1,6 @@
 "use client";
 
+import { refreshHeaderCounts } from "@/lib/header-counts";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Car, Mail, X } from "lucide-react";
@@ -147,6 +148,7 @@ export function GarageCars({ cars }: { cars: UserCar[] }) {
     const data = new FormData();
     data.set("carId", id);
     await deleteCarAction(data);
+    void refreshHeaderCounts();
     router.refresh();
   };
 
@@ -185,7 +187,10 @@ export function GarageCars({ cars }: { cars: UserCar[] }) {
         <CarEditorModal
           car={editor.car}
           onClose={() => setEditor(null)}
-          onSaved={() => router.refresh()}
+          onSaved={() => {
+            void refreshHeaderCounts();
+            router.refresh();
+          }}
         />
       )}
     </div>

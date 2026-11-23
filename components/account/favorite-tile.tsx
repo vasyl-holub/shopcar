@@ -5,6 +5,7 @@ import { X } from "lucide-react";
 import { OfferTile } from "@/components/product/offer-tile";
 import { removeFavoriteAction } from "@/app/account/actions";
 import type { FavoriteItem } from "@/lib/api/account";
+import { refreshFavoritesCount } from "@/lib/favorites-count";
 
 /** Картка обраного: та сама, що у спецпропозиціях, плюс хрестик у куті */
 export function FavoriteTile({
@@ -23,6 +24,7 @@ export function FavoriteTile({
     const data = new FormData();
     data.set("productId", item.productId);
     await removeFavoriteAction(data);
+    void refreshFavoritesCount();
     router.refresh();
   };
 

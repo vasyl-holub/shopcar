@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useSearchNav } from "@/components/search/search-nav";
 import { ShopIcon } from "@/components/ui/shop-icon";
 import type { MatchType } from "@/lib/api/catalog-search";
 import { useManufacturerSuggest } from "@/components/search/use-manufacturer-suggest";
@@ -111,7 +111,7 @@ export function SearchFilters({
     ean: string;
   };
 }) {
-  const router = useRouter();
+  const { push } = useSearchNav();
   const [type, setType] = useState<MatchType>(initial.type);
   const [num, setNum] = useState(initial.num);
   const [brand, setBrand] = useState(initial.brand);
@@ -131,7 +131,7 @@ export function SearchFilters({
     if (t !== "exact") query.set("type", t);
     if (sort) query.set("sort", sort);
     if (descending) query.set("dir", "desc");
-    router.push(`/catalog-search?${query.toString()}`);
+    push(`/catalog-search?${query.toString()}`);
   };
 
   return (

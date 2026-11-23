@@ -1,5 +1,6 @@
 "use client";
 
+import { refreshHeaderCounts } from "@/lib/header-counts";
 import { useEffect, useMemo, useState, useTransition } from "react";
 
 import { useRouter } from "next/navigation";
@@ -31,8 +32,6 @@ const SORTS = [
   { value: "created", label: "Дата" },
 
   { value: "subject", label: "Тема" },
-
-  { value: "sender", label: "Від" },
 ];
 
 /** Прапорець за макетом: рамка 20 і помаранчевий квадрат 12 */
@@ -109,7 +108,7 @@ export function MessagesList({ items }: { items: Informer[] }) {
   const sorted = useMemo(() => {
     const dir = descending ? -1 : 1;
 
-    const key = sort as "created" | "subject" | "sender";
+    const key = sort as "created" | "subject";
 
     return [...items].sort((a, b) => dir * a[key].localeCompare(b[key], "uk"));
   }, [items, sort, descending]);
@@ -138,6 +137,7 @@ export function MessagesList({ items }: { items: Informer[] }) {
 
       setSelected(new Set());
 
+      void refreshHeaderCounts();
       router.refresh();
     });
 
@@ -150,7 +150,10 @@ export function MessagesList({ items }: { items: Informer[] }) {
   useEffect(() => {
     if (!openUnread) return;
     const timer = setTimeout(() => {
-      void readMessagesAction([openUnread]).then(() => router.refresh());
+      void readMessagesAction([openUnread]).then(() => {
+        void refreshHeaderCounts();
+        router.refresh();
+      });
     }, READ_AFTER_MS);
     return () => clearTimeout(timer);
   }, [openUnread, router]);
@@ -198,7 +201,7 @@ export function MessagesList({ items }: { items: Informer[] }) {
       <div className="scrollbar-orange max-sm:overflow-x-auto">
         <div className="flex flex-col gap-5 max-sm:min-w-[700px]">
           <div className="flex items-center text-[16px] font-semibold leading-[1.5] text-[#121212]">
-            <div className="flex w-[137px] shrink-0 items-center gap-5">
+            <div className="flex w-[170px] shrink-0 items-center gap-5">
               <Box
                 checked={allSelected}
 
@@ -214,8 +217,6 @@ export function MessagesList({ items }: { items: Informer[] }) {
             </div>
 
             <span className="min-w-0 flex-1 px-2.5">Тема</span>
-
-            <span className="shrink-0">Від</span>
           </div>
 
           <ul>
@@ -230,7 +231,7 @@ export function MessagesList({ items }: { items: Informer[] }) {
                 )}
               >
                 <div className="flex items-center text-[16px] leading-[1.5]">
-                  <div className="flex w-[137px] shrink-0 items-center gap-2.5">
+                  <div className="flex w-[170px] shrink-0 items-center gap-2.5">
                     <Box
                       checked={selected.has(item.id)}
 
@@ -255,14 +256,10 @@ export function MessagesList({ items }: { items: Informer[] }) {
                   >
                     {item.subject}
                   </button>
-
-                  <span className="shrink-0 pl-2.5 text-right">
-                    {item.sender}
-                  </span>
                 </div>
 
                 {open === item.id && (
-                  <div className="mt-2.5 pl-[137px]">
+                  <div className="mt-2.5 pl-[170px]">
                     <MessageText id={item.id} />
                   </div>
                 )}

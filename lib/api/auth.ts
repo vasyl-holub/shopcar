@@ -213,8 +213,17 @@ export const getCurrentUser = cache(
     const auth = await getApiAuth();
     if (!auth) return null;
     try {
-      const data = await gql<{ user: CurrentUser | null }>(ME, { auth });
-      return data.user;
+      const data = await gql<{
+        user:
+          | (Omit<CurrentUser, "phone"> & { phone: string | string[] | null })
+          | null;
+      }>(ME, { auth });
+      if (!data.user) return null;
+      /* У схемі phone — список, а всюди далі потрібен один рядок */
+      const phone = Array.isArray(data.user.phone)
+        ? (data.user.phone.find(Boolean) ?? null)
+        : data.user.phone;
+      return { ...data.user, phone };
     } catch {
       return null;
     }

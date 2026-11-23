@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { Heart } from "lucide-react";
 import { toggleFavoriteAction } from "@/app/account/actions";
 import { cn } from "@/lib/cn";
+import { refreshFavoritesCount } from "@/lib/favorites-count";
 
 /** Сердечко в кутку картки товару. Заливається, коли товар в обраному */
 export function FavoriteHeart({
@@ -31,6 +32,7 @@ export function FavoriteHeart({
         startTransition(async () => {
           const res = await toggleFavoriteAction(productId, next);
           setActive(res.isFavorite);
+          void refreshFavoritesCount();
         });
       }}
       className={cn(

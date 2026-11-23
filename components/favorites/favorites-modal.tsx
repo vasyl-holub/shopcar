@@ -11,6 +11,11 @@ import { removeFavoriteAction } from "@/app/account/actions";
 import { favoritesAction } from "@/app/account/menu-action";
 import type { FavoriteItem } from "@/lib/api/account";
 import { formatIn, UAH } from "@/lib/money";
+import {
+  loadFavoritesCount,
+  refreshFavoritesCount,
+  useFavoritesCount,
+} from "@/lib/favorites-count";
 
 /** Одна позиція: фото 100, виробник, артикул, назва; праворуч хрестик і ціна */
 function Row({
@@ -112,6 +117,7 @@ function FavoritesModal({ onClose }: { onClose: () => void }) {
       data.set("productId", id);
       await removeFavoriteAction(data);
     }
+    void refreshFavoritesCount();
   };
 
   if (!items || items.length === 0) {
@@ -176,6 +182,17 @@ function FavoritesModal({ onClose }: { onClose: () => void }) {
 /** Значок серця в шапці: відкриває вікно з обраними товарами */
 export function FavoritesButton() {
   const [open, setOpen] = useState(false);
+  const count = useFavoritesCount();
+
+  useEffect(() => {
+    void loadFavoritesCount();
+    /* Обране могли змінити в іншій вкладці */
+    const onVisible = () => {
+      if (document.visibilityState === "visible") void refreshFavoritesCount();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, []);
 
   return (
     <>
@@ -185,7 +202,11 @@ export function FavoritesButton() {
         onClick={() => setOpen(true)}
         className="relative flex shrink-0 cursor-pointer items-center justify-center p-1 transition-opacity hover:opacity-70"
       >
-        <ShopIcon name="favorite" size={36} className="size-9" />
+        <ShopIcon
+          name={count > 0 ? "favorite-filled" : "favorite"}
+          size={36}
+          className="size-9"
+        />
       </button>
       {open && <FavoritesModal onClose={() => setOpen(false)} />}
     </>

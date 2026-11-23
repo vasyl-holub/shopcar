@@ -10,6 +10,7 @@ import { removeFavoritesAction } from "@/app/account/actions";
 import { setCartCount } from "@/lib/cart-count";
 import { hasStock } from "@/lib/stock";
 import { cn } from "@/lib/cn";
+import { refreshFavoritesCount } from "@/lib/favorites-count";
 import type { FavoriteItem } from "@/lib/api/account";
 
 const PER_PAGE = 20;
@@ -120,6 +121,7 @@ export function FavoritesPanel({ items }: { items: FavoriteItem[] }) {
     startTransition(async () => {
       const res = await removeFavoritesAction(items.map((i) => i.productId));
       setPicked(new Set());
+      void refreshFavoritesCount();
       setMessage(
         res.failed
           ? { text: `Не вдалося прибрати: ${res.failed}`, error: true }

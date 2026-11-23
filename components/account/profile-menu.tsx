@@ -6,6 +6,8 @@ import { Modal } from "@/components/ui/modal";
 import { logoutAction } from "@/app/login/actions";
 import { profileMenuCountsAction } from "@/app/account/menu-action";
 import { cn } from "@/lib/cn";
+import { loadHeaderCounts, useUnreadCount } from "@/lib/header-counts";
+import { CountBadge } from "@/components/layout/count-badge";
 
 type Counts = { cars: number; favorites: number };
 
@@ -101,12 +103,19 @@ export function ProfileMenuButton({
   label: string;
 }) {
   const [open, setOpen] = useState(false);
+  const unread = useUnreadCount();
+
+  useEffect(() => {
+    void loadHeaderCounts();
+  }, []);
 
   return (
     <>
       <button
         type="button"
-        aria-label={label}
+        aria-label={
+          unread > 0 ? `${label}. Непрочитаних повідомлень: ${unread}` : label
+        }
         onClick={() => setOpen(true)}
         className="relative flex shrink-0 cursor-pointer items-center justify-center p-1 transition-opacity hover:opacity-80"
       >
@@ -116,6 +125,7 @@ export function ProfileMenuButton({
         >
           {initials}
         </span>
+        <CountBadge count={unread} />
       </button>
       {open && <ProfileMenu onClose={() => setOpen(false)} />}
     </>

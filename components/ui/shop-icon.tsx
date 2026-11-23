@@ -6,6 +6,7 @@ export type ShopIconName =
   | "garage"
   | "cart"
   | "favorite"
+  | "favorite-filled"
   | "chevron-down"
   | "chevron-down-gray"
   | "chevron-down-orange"

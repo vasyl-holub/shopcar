@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
+import { SearchPending, useSearchNav } from "@/components/search/search-nav";
 import { ImageOff } from "lucide-react";
 import { Dropdown } from "@/components/ui/dropdown";
+import { Modal } from "@/components/ui/modal";
 import { ShopIcon } from "@/components/ui/shop-icon";
 import { ProductPhoto } from "@/components/catalog/product-photo";
 import type { ProductListItem } from "@/lib/api/product";
@@ -28,18 +30,23 @@ export function SearchResults({
   sort,
   descending,
   sidebar,
+  chips,
   footer,
 }: {
   items: ProductListItem[];
   sort: string;
   descending: boolean;
   sidebar: React.ReactNode;
+  /** Застосовані умови пошуку й фільтри, що знімаються по одній */
+  chips?: React.ReactNode;
   footer: React.ReactNode;
 }) {
-  const router = useRouter();
+  const { push } = useSearchNav();
   const pathname = usePathname();
   const params = useSearchParams();
   const [filterOpen, setFilterOpen] = useState(false);
+  /* Товар, фото якого відкрито у вікні */
+  const [zoomed, setZoomed] = useState<ProductListItem | null>(null);
 
   const navigate = (next: { sort?: string; descending?: boolean }) => {
     const query = new URLSearchParams(params.toString());
@@ -47,7 +54,7 @@ export function SearchResults({
     query.set("sort", next.sort ?? sort);
     if (next.descending ?? descending) query.set("dir", "desc");
     else query.delete("dir");
-    router.push(`${pathname}?${query.toString()}`);
+    push(`${pathname}?${query.toString()}`);
   };
 
   return (
@@ -73,6 +80,8 @@ export function SearchResults({
         </button>
       </div>
 
+      {chips}
+
       {/* Планшет і менше: фільтри ховаються під кнопку */}
       <button
         type="button"
@@ -87,7 +96,8 @@ export function SearchResults({
         />
       </button>
 
-      <div className="flex flex-col gap-[30px] lg:flex-row lg:items-start lg:gap-2.5">
+      <div className="relative flex flex-col gap-[30px] lg:flex-row lg:items-start lg:gap-2.5">
+        <SearchPending />
         <aside
           className={cn(
             "w-full lg:w-[290px] lg:shrink-0",
@@ -125,7 +135,7 @@ export function SearchResults({
                         key={p.id}
                         className={cn(
                           columns,
-                          "border-b border-[#e6e6e6] py-[15px] text-[16px] leading-[1.5] text-shop-black",
+                          "relative border-b border-[#e6e6e6] py-[15px] text-[16px] leading-[1.5] text-shop-black transition-colors hover:bg-white",
                         )}
                       >
                         <span className="min-w-0 break-words pr-4">
@@ -134,29 +144,42 @@ export function SearchResults({
                         <span className="min-w-0 break-words pr-4">
                           {p.num}
                         </span>
-                        <Link
-                          href={href}
-                          aria-label={p.name}
-                          className="relative block size-[55px] overflow-hidden rounded-[4px] border border-line bg-white"
-                        >
-                          <ProductPhoto
-                            sources={p.images}
-                            alt=""
-                            article={p.num}
-                            width={55}
-                            height={55}
-                            className="size-full object-contain p-0.5"
-                            fallback={
-                              <span className="flex size-full items-center justify-center">
-                                <ImageOff
-                                  aria-hidden
-                                  className="size-6 text-line"
-                                  strokeWidth={1.25}
-                                />
-                              </span>
-                            }
-                          />
-                        </Link>
+                        {p.images.length > 0 ? (
+                          <button
+                            type="button"
+                            onClick={() => setZoomed(p)}
+                            aria-label={`Збільшити фото: ${p.name}`}
+                            className="relative z-10 block size-[55px] cursor-zoom-in overflow-hidden rounded-[4px] border border-line bg-white transition-colors hover:border-orange"
+                          >
+                            <ProductPhoto
+                              sources={p.images}
+                              alt=""
+                              article={p.num}
+                              width={55}
+                              height={55}
+                              className="size-full object-contain p-0.5"
+                              fallback={
+                                <span className="flex size-full items-center justify-center">
+                                  <ImageOff
+                                    aria-hidden
+                                    className="size-6 text-line"
+                                    strokeWidth={1.25}
+                                  />
+                                </span>
+                              }
+                            />
+                          </button>
+                        ) : (
+                          <span
+                            aria-hidden
+                            className="relative flex size-[55px] items-center justify-center overflow-hidden rounded-[4px] border border-line bg-white"
+                          >
+                            <ImageOff
+                              className="size-6 text-line"
+                              strokeWidth={1.25}
+                            />
+                          </span>
+                        )}
                         <span className="flex min-w-0 items-center gap-[5px]">
                           <ShopIcon
                             name="information-circle"
@@ -164,7 +187,7 @@ export function SearchResults({
                           />
                           <Link
                             href={href}
-                            className="min-w-0 transition-colors hover:text-orange"
+                            className="min-w-0 transition-colors after:absolute after:inset-0 hover:text-orange"
                           >
                             {p.name}
                           </Link>
@@ -179,6 +202,34 @@ export function SearchResults({
           </div>
         )}
       </div>
+
+      {zoomed && (
+        <Modal title={zoomed.name} onClose={() => setZoomed(null)}>
+          <div className="flex flex-col items-center gap-3 p-2.5 text-center">
+            <span className="relative block aspect-square w-full max-w-[480px]">
+              <ProductPhoto
+                sources={zoomed.images}
+                alt={zoomed.name}
+                article={zoomed.num}
+                width={480}
+                height={480}
+                sizes="(min-width: 1024px) 480px, 90vw"
+                className="size-full object-contain"
+                placeholderIconClassName="size-16"
+              />
+            </span>
+            <p className="text-[14px] leading-[1.4] text-shop-black">
+              {[zoomed.brand, zoomed.num].filter(Boolean).join(" ")}
+            </p>
+            <Link
+              href={`/part/${zoomed.slug}/${zoomed.id}`}
+              className="text-[14px] font-semibold leading-[1.4] text-orange transition-opacity hover:opacity-80"
+            >
+              Відкрити товар
+            </Link>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }
