@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { cn } from "@/lib/cn";
 import type { Banner } from "@/lib/api/adverts";
@@ -17,9 +16,12 @@ const INTERVAL = 6000;
 export function BannerRotator({
   items,
   className,
+  frameClassName,
 }: {
   items: Banner[];
   className: string;
+  /** Рамка, в якій стоїть картинка, коли фон банера тягнеться на всю ширину */
+  frameClassName?: string;
 }) {
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
@@ -44,49 +46,54 @@ export function BannerRotator({
       onBlur={() => setPaused(false)}
       className={cn("relative overflow-hidden bg-orange", className)}
     >
-      {items.map((b, i) => {
-        const shown = i === current;
-        const picture = (
-          <Image
-            src={failed.has(b.id) ? b.thumb : b.image}
-            alt={b.alt}
-            onError={() => setFailed((prev) => new Set(prev).add(b.id))}
-            fill
-            unoptimized
-            priority={i === 0}
-            sizes="100vw"
-            className="object-cover"
-          />
-        );
-        const link = cn(
-          "absolute inset-0 block transition-opacity duration-500",
-          shown ? "opacity-100" : "pointer-events-none opacity-0",
-        );
+      {/* Усі банери лежать одне над одним в одній клітинці сітки: висоту задає
+          найвищий. З lg картинка йде у своїх пропорціях, тож нічого не
+          обрізається (кнопка не липне до краю); нижче — фіксована висота
+          з обрізанням, як у макеті. */}
+      <div className={cn("relative mx-auto grid h-full", frameClassName)}>
+        {items.map((b, i) => {
+          const shown = i === current;
+          const picture = (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={failed.has(b.id) ? b.thumb : b.image}
+              alt={b.alt}
+              onError={() => setFailed((prev) => new Set(prev).add(b.id))}
+              loading={i === 0 ? "eager" : "lazy"}
+              draggable={false}
+              className="absolute inset-0 size-full object-cover lg:static lg:h-auto lg:w-full"
+            />
+          );
+          const link = cn(
+            "relative col-start-1 row-start-1 block h-full transition-opacity duration-500",
+            shown ? "opacity-100" : "pointer-events-none opacity-0",
+          );
 
-        return b.external ? (
-          <a
-            key={b.id}
-            href={b.href}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-hidden={!shown}
-            tabIndex={shown ? 0 : -1}
-            className={link}
-          >
-            {picture}
-          </a>
-        ) : (
-          <Link
-            key={b.id}
-            href={b.href}
-            aria-hidden={!shown}
-            tabIndex={shown ? 0 : -1}
-            className={link}
-          >
-            {picture}
-          </Link>
-        );
-      })}
+          return b.external ? (
+            <a
+              key={b.id}
+              href={b.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-hidden={!shown}
+              tabIndex={shown ? 0 : -1}
+              className={link}
+            >
+              {picture}
+            </a>
+          ) : (
+            <Link
+              key={b.id}
+              href={b.href}
+              aria-hidden={!shown}
+              tabIndex={shown ? 0 : -1}
+              className={link}
+            >
+              {picture}
+            </Link>
+          );
+        })}
+      </div>
 
       {count > 1 && (
         <div className="absolute inset-x-0 bottom-1.5 z-10 flex justify-center gap-2">

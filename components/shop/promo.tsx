@@ -23,7 +23,8 @@ export async function PromoStrip({ brand, title, href }: PromoContent) {
     return (
       <BannerRotator
         items={banners}
-        className="h-[133px] md:h-20 lg:h-[98px]"
+        className="h-[133px] md:h-20 lg:h-auto"
+        frameClassName="max-w-[1440px] lg:px-10"
       />
     );
   }
@@ -76,7 +77,7 @@ export async function PromoBanner({ brand, title, href }: PromoContent) {
     return (
       <BannerRotator
         items={banners}
-        className="h-[251px] rounded-[4px] md:h-auto md:min-h-[184px] md:rounded-lg lg:h-[248px]"
+        className="h-[251px] rounded-[4px] md:h-auto md:min-h-[184px] md:rounded-lg lg:min-h-0"
       />
     );
   }
