@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Search } from "lucide-react";
 import { useSearchNav } from "@/components/search/search-nav";
 import { ShopIcon } from "@/components/ui/shop-icon";
 import type { MatchType } from "@/lib/api/catalog-search";
@@ -67,7 +68,7 @@ export function Field({
   list?: string;
 }) {
   return (
-    <div className="px-2">
+    <div className="relative px-2">
       <input
         type="search"
         name={name}
@@ -77,8 +78,16 @@ export function Field({
         aria-label={label}
         autoComplete="off"
         list={list}
-        className="h-[42px] w-full rounded-[4px] border border-[#e6e6e6] bg-white pl-3 pr-[9px] text-[16px] leading-[1.5] text-shop-black outline-none placeholder:text-muted focus:border-orange"
+        className="h-[42px] w-full rounded-[4px] border border-[#e6e6e6] bg-white pl-3 pr-11 text-[16px] leading-[1.5] text-shop-black outline-none placeholder:text-muted focus:border-orange"
       />
+      {/* Кнопка відправляє форму так само, як Enter */}
+      <button
+        type="submit"
+        aria-label={`Шукати: ${label}`}
+        className="absolute right-2 top-0 flex h-[42px] w-10 cursor-pointer items-center justify-center text-orange transition-opacity hover:opacity-80"
+      >
+        <Search aria-hidden className="size-5" strokeWidth={2} />
+      </button>
     </div>
   );
 }
@@ -86,8 +95,8 @@ export function Field({
 /**
  * Бічна панель результатів пошуку: тип збігу й поля «Номер», «Бренд»,
  * «Назва». Усе складається в адресу (`/catalog-search?…`), сторінку
- * рахує сервер. Enter у будь-якому полі й перемикання типу застосовують
- * фільтр; категорія (`slug`) і сортування зберігаються.
+ * рахує сервер. Enter або кнопка з лупою біля поля й перемикання типу
+ * застосовують фільтр; категорія (`slug`) і сортування зберігаються.
  */
 export function SearchFilters({
   slug,
@@ -117,6 +126,23 @@ export function SearchFilters({
   const [brand, setBrand] = useState(initial.brand);
   const [name, setName] = useState(initial.name);
   const brands = useManufacturerSuggest(brand);
+
+  /* Умову прибрали чипом чи змінили адресу іншим шляхом: поля мають
+     показувати те, що зараз в адресі, а не те, що було введено раніше */
+  const signature = JSON.stringify([
+    initial.type,
+    initial.num,
+    initial.brand,
+    initial.name,
+  ]);
+  const [seen, setSeen] = useState(signature);
+  if (signature !== seen) {
+    setSeen(signature);
+    setType(initial.type);
+    setNum(initial.num);
+    setBrand(initial.brand);
+    setName(initial.name);
+  }
 
   const apply = (next: Partial<{ type: MatchType; slug: string }> = {}) => {
     const query = new URLSearchParams();
@@ -210,7 +236,7 @@ export function SearchFilters({
         <Field name="name" value={name} onChange={setName} label="Назва" />
       </Group>
 
-      {/* Enter у полях відправляє форму; окрема кнопка не потрібна */}
+      {/* Enter відправляє форму й без кнопок у полях */}
       <button type="submit" className="sr-only">
         Знайти
       </button>

@@ -13,6 +13,7 @@ import { GarageButton } from "@/components/garage/garage-modal";
 import { FavoritesButton } from "@/components/favorites/favorites-modal";
 import { LoginButton } from "@/components/auth/login-modal";
 import { ProfileMenuButton } from "@/components/account/profile-menu";
+import { AuthCountsSync } from "@/components/layout/auth-counts-sync";
 import { PartRequestButton } from "@/components/requests/part-request-modal";
 import { AdvancedSearchButton } from "@/components/search/advanced-search-modal";
 import { CartBadge } from "@/components/layout/cart-badge";
@@ -161,6 +162,7 @@ export async function Header() {
 
   return (
     <header className="bg-white">
+      <AuthCountsSync identity={profile ? "user" : "guest"} />
       {/* ---------------------------------------------------- Desktop */}
       <div className="hidden bg-canvas lg:block">
         <div className="mx-auto flex max-w-[1440px] items-start justify-between px-10 py-6">

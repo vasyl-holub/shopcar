@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Search } from "lucide-react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useSearchNav } from "@/components/search/search-nav";
 import { Group } from "@/components/search/search-filters";
@@ -50,34 +51,22 @@ function PriceInput({
   label,
   value,
   placeholder,
-  onCommit,
+  onChange,
 }: {
   label: string;
   value: string;
   placeholder: string;
-  onCommit: (v: string) => void;
+  onChange: (v: string) => void;
 }) {
-  /* Редагуємо локально, у адресу пишемо після Enter або виходу з поля */
-  const [draft, setDraft] = useState(value);
-  const [synced, setSynced] = useState(value);
-  if (synced !== value) {
-    setSynced(value);
-    setDraft(value);
-  }
-
   return (
     <input
       type="text"
       inputMode="numeric"
-      value={draft}
+      value={value}
       aria-label={label}
       placeholder={placeholder}
       autoComplete="off"
-      onChange={(e) => setDraft(e.target.value.replace(/[^\d]/g, ""))}
-      onBlur={() => draft !== value && onCommit(draft)}
-      onKeyDown={(e) => {
-        if (e.key === "Enter") onCommit(draft);
-      }}
+      onChange={(e) => onChange(e.target.value.replace(/[^\d]/g, ""))}
       className="h-[42px] w-full min-w-0 rounded-[4px] border border-[#e6e6e6] bg-white px-3 text-[16px] leading-[1.5] text-shop-black outline-none placeholder:text-muted focus:border-orange"
     />
   );
@@ -121,8 +110,26 @@ export function ResultFilters({
       next.forEach((b) => q.append("rb", b));
     });
 
-  const setPrice = (key: "pmin" | "pmax", value: string) =>
-    change((q) => (value ? q.set(key, value) : q.delete(key)));
+  /* Межі цін редагуємо локально, а в адресу пишемо кнопкою з лупою або
+     Enter: так обидва поля застосовуються одним переходом */
+  const [draftMin, setDraftMin] = useState(active.pmin);
+  const [draftMax, setDraftMax] = useState(active.pmax);
+  const [syncedPrice, setSyncedPrice] = useState(
+    `${active.pmin}|${active.pmax}`,
+  );
+  if (syncedPrice !== `${active.pmin}|${active.pmax}`) {
+    setSyncedPrice(`${active.pmin}|${active.pmax}`);
+    setDraftMin(active.pmin);
+    setDraftMax(active.pmax);
+  }
+
+  const applyPrice = () =>
+    change((q) => {
+      if (draftMin) q.set("pmin", draftMin);
+      else q.delete("pmin");
+      if (draftMax) q.set("pmax", draftMax);
+      else q.delete("pmax");
+    });
 
   const reset = () =>
     change((q) => RESULT_FILTER_KEYS.forEach((k) => q.delete(k)));
@@ -170,23 +177,36 @@ export function ResultFilters({
 
       {price && price.max > price.min && (
         <Group title="Ціна, грн">
-          <div className="flex items-center gap-2 px-2">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              applyPrice();
+            }}
+            className="flex items-center gap-2 px-2"
+          >
             <PriceInput
               label="Ціна від"
-              value={active.pmin}
+              value={draftMin}
               placeholder={String(Math.floor(price.min))}
-              onCommit={(v) => setPrice("pmin", v)}
+              onChange={setDraftMin}
             />
             <span aria-hidden className="text-muted">
               -
             </span>
             <PriceInput
               label="Ціна до"
-              value={active.pmax}
+              value={draftMax}
               placeholder={String(Math.ceil(price.max))}
-              onCommit={(v) => setPrice("pmax", v)}
+              onChange={setDraftMax}
             />
-          </div>
+            <button
+              type="submit"
+              aria-label="Застосувати ціну"
+              className="flex size-[42px] shrink-0 cursor-pointer items-center justify-center rounded-[4px] border border-orange text-orange transition-colors hover:bg-orange hover:text-white"
+            >
+              <Search aria-hidden className="size-5" strokeWidth={2} />
+            </button>
+          </form>
         </Group>
       )}
 
