@@ -275,12 +275,16 @@ function OfferLine({
     .filter(Boolean)
     .join(": ");
 
-  /* Повна картка складу: порожні рядки пропускаємо, як і в кошику */
-  const rows: { label: string; value: string; bold?: boolean }[] = [];
+  /* Підказка лише на назві складу чи строку доставки; значок складу
+     без підказки. Порожні рядки пропускаємо, як і в кошику. */
+  type Row = { label: string; value: string; bold?: boolean };
+  const rows: Row[] = [];
   const add = (label: string, value: unknown, bold = false) => {
     const text = value == null ? "" : String(value).trim();
     if (text) rows.push({ label, value: text, bold });
   };
+  const label = store?.name || shopLabel(store) || days;
+
   add("Пріоритет", store?.priority, true);
   add("Склад", storeName);
   add("Оновлено", formatStamp(store?.updated), true);
@@ -290,79 +294,45 @@ function OfferLine({
   add("Телефон", store?.phone);
   add("Web-адреса", store?.url);
   add("Опис", store?.description);
-  add("Дата доставки", days === "—" ? "" : days);
+  /* Строк уже видно в самій колонці, коли там він і стоїть */
+  add("Дата доставки", label === days || days === "—" ? "" : days);
 
-  /* Є що показати в підказці: значок і назва складу тоді підкреслені
-     пунктиром, а біля назви стоїть «i», як у плашках */
-  const hasCard = rows.length > 0 || Boolean(store?.iconTitle);
-  /* «i» біля значка того самого кольору, що й значок: свої магазини —
-     помаранчеві, склади з поверненням — зелені, без повернення — червоні */
-  const noReturn = /немає|не підлягає/i.test(store?.iconTitle ?? "");
-  const iconTone = store?.isLocal
-    ? "text-orange"
-    : !noReturn && (returns || store?.iconTitle)
-      ? "text-shop-green"
-      : "text-danger-500";
-  const storeTip = (icon: React.ReactNode, mark: "line" | "plain" = "line") =>
-    !hasCard ? (
-      icon
-    ) : (
-      <Tooltip
-        label="Інформація про склад"
-        className={mark === "plain" ? "min-w-0" : undefined}
-        trigger={
-          mark === "plain" ? (
-            icon
-          ) : (
-            <span className="relative inline-flex border-b border-dotted border-shop-black/60 pb-px">
-              {icon}
-              {/* «i» як степінь у верхньому правому куті значка; позиціонуємо
-                  абсолютно, щоб вона не розширювала колонку зі значками */}
-              <Info
-                aria-hidden
-                className={cn(
-                  "absolute -right-2.5 -top-1 size-3 lg:-right-3 lg:-top-1.5 lg:size-3.5",
-                  iconTone,
-                )}
-                strokeWidth={2}
-              />
-            </span>
-          )
-        }
-      >
-        <span className="flex min-w-[210px] max-w-[300px] flex-col gap-[5px]">
-          {store?.iconTitle && (
-            <span className="font-semibold">{store.iconTitle}</span>
-          )}
-          {rows.map((r) => (
-            <span key={r.label} className="flex gap-[5px]">
-              <span className={r.bold ? "shrink-0 font-semibold" : "shrink-0"}>
-                {r.label}:
-              </span>
-              <span className="text-muted">{r.value}</span>
-            </span>
-          ))}
+  const hasLabelCard = rows.length > 0 || Boolean(store?.iconTitle);
+
+  const card = (
+    <span className="flex min-w-[210px] max-w-[300px] flex-col gap-[5px]">
+      {store?.iconTitle && (
+        <span className="font-semibold">{store.iconTitle}</span>
+      )}
+      {rows.map((r) => (
+        <span key={r.label} className="flex gap-[5px]">
+          <span className={r.bold ? "shrink-0 font-semibold" : "shrink-0"}>
+            {r.label}:
+          </span>
+          <span className="text-muted">{r.value}</span>
         </span>
-      </Tooltip>
-    );
+      ))}
+    </span>
+  );
 
-  const label = store?.name || shopLabel(store) || days;
   const daysText = (
     <span
       className={cn(
         "min-w-0 break-words text-[14px] font-semibold leading-[1.3] lg:text-[16px] lg:leading-[1.3]",
+        /* Строк на кшталт «114-144 дн.» не рвемо: від планшета він вміщається */
+        label === days && "md:whitespace-nowrap",
         store?.isLocal ? "text-shop-green" : "text-orange",
       )}
     >
       <span
         className={cn(
-          hasCard &&
+          hasLabelCard &&
             "underline decoration-dotted decoration-1 underline-offset-[3px]",
         )}
       >
         {label}
       </span>
-      {hasCard && (
+      {hasLabelCard && (
         <Info
           aria-hidden
           className="relative -top-1 ml-0.5 inline size-3 lg:-top-1.5 lg:size-3.5"
@@ -373,11 +343,11 @@ function OfferLine({
   );
 
   return (
-    <div className="grid min-h-9 grid-cols-[150px_32px_68px_90px] items-center gap-x-1.5 md:grid-cols-[168px_30px_70px_140px] md:gap-x-5 lg:grid-cols-[188px_40px_80px_128px] lg:gap-[26px]">
+    <div className="grid min-h-9 grid-cols-[164px_32px_64px_88px] items-center gap-x-1.5 md:grid-cols-[200px_30px_70px_140px] md:gap-x-5 lg:grid-cols-[204px_38px_80px_128px] lg:gap-[22px]">
       <div className="flex min-w-0 items-center gap-2.5 lg:gap-3">
-        <span className="flex w-[68px] shrink-0 items-center gap-1 lg:w-[76px]">
+        <span className="flex w-[84px] shrink-0 items-center gap-1 lg:w-[88px]">
           {store?.isLocal ? (
-            storeTip(<StoreIcon fallback="storage" className="h-5 lg:h-6" />)
+            <StoreIcon fallback="storage" className="h-5 lg:h-6" />
           ) : (
             <>
               {offer.note && (
@@ -394,20 +364,27 @@ function OfferLine({
                   <span className="block max-w-[260px]">{offer.note}</span>
                 </Tooltip>
               )}
-              {storeTip(
-                <StoreIcon
-                  iconUrl={store?.iconUrl}
-                  fallback={returns ? "arrow-green" : "arrow-red"}
-                  className="h-5 lg:h-6"
-                />,
-              )}
+              <StoreIcon
+                iconUrl={store?.iconUrl}
+                fallback={returns ? "arrow-green" : "arrow-red"}
+                className="h-5 lg:h-6"
+              />
             </>
           )}
         </span>
 
-        {/* Назва чи строк відкривають ту саму картку складу, що й значок
-            (в ній є і «Працює до») */}
-        {storeTip(daysText, "plain")}
+        {/* Уся інформація про склад — лише на назві чи строку доставки */}
+        {hasLabelCard ? (
+          <Tooltip
+            label="Інформація про склад"
+            className="min-w-0"
+            trigger={daysText}
+          >
+            {card}
+          </Tooltip>
+        ) : (
+          daysText
+        )}
       </div>
 
       <span className="flex items-center">
@@ -519,7 +496,7 @@ function ColumnsHead({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        "grid grid-cols-[150px_32px_68px_90px] gap-x-1.5 text-[12px] font-semibold leading-[1.33] text-shop-black md:grid-cols-[168px_30px_70px_140px] md:gap-x-5 lg:grid-cols-[188px_40px_80px_128px] lg:gap-[26px] lg:text-[16px] lg:leading-[1.5]",
+        "grid grid-cols-[164px_32px_64px_88px] gap-x-1.5 text-[12px] font-semibold leading-[1.33] text-shop-black md:grid-cols-[200px_30px_70px_140px] md:gap-x-5 lg:grid-cols-[204px_38px_80px_128px] lg:gap-[22px] lg:text-[16px] lg:leading-[1.5]",
         className,
       )}
     >
