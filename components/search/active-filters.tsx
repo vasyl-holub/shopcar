@@ -1,6 +1,6 @@
 "use client";
 
-import { X } from "lucide-react";
+import { FilterChips } from "@/components/ui/filter-chips";
 import { useSearchNav } from "@/components/search/search-nav";
 
 export type FilterChip = {
@@ -25,37 +25,15 @@ export function ActiveFilters({
   canReset: boolean;
 }) {
   const { push } = useSearchNav();
-  if (chips.length === 0) return null;
 
   return (
-    <ul
-      className="flex flex-wrap items-center gap-2"
-      aria-label="Застосовані умови"
-    >
-      {chips.map((chip) => (
-        <li key={chip.key}>
-          <button
-            type="button"
-            onClick={() => push(chip.href, { scroll: false })}
-            aria-label={`Прибрати: ${chip.label}`}
-            className="flex cursor-pointer items-center gap-2 rounded-[4px] border border-line bg-white px-3 py-1.5 text-[14px] leading-[1.4] text-shop-black transition-colors hover:border-orange"
-          >
-            {chip.label}
-            <X aria-hidden className="size-4 text-orange" strokeWidth={2} />
-          </button>
-        </li>
-      ))}
-      {canReset && (
-        <li>
-          <button
-            type="button"
-            onClick={() => push(resetHref, { scroll: false })}
-            className="cursor-pointer px-2 py-1.5 text-[14px] font-semibold leading-[1.4] text-orange transition-opacity hover:opacity-80"
-          >
-            Скинути фільтри
-          </button>
-        </li>
-      )}
-    </ul>
+    <FilterChips
+      chips={chips.map((chip) => ({
+        key: chip.key,
+        label: chip.label,
+        onRemove: () => push(chip.href, { scroll: false }),
+      }))}
+      onReset={canReset ? () => push(resetHref, { scroll: false }) : undefined}
+    />
   );
 }

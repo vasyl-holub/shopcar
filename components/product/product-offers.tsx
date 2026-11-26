@@ -9,6 +9,7 @@ import {
   FileText,
   PlayCircle,
   House,
+  Info,
   Zap,
 } from "lucide-react";
 import { Dropdown } from "@/components/ui/dropdown";
@@ -22,6 +23,12 @@ import { hasStock, isUnlimitedCount } from "@/lib/stock";
 import { useProductExtras } from "@/components/product/use-product-extras";
 import { RangeFilter, type Range } from "@/components/catalog/range-filter";
 import { Pager } from "@/components/ui/pager";
+import { FilterChips, type Chip } from "@/components/ui/filter-chips";
+import {
+  CollapseBody,
+  CollapseProvider,
+  CollapseToggle,
+} from "@/components/ui/collapse";
 import type { ProductOffer } from "@/lib/api/product";
 import type { CurrencyRate } from "@/lib/api/currency";
 import { buildCurrencies, formatIn, UAH, type Currency } from "@/lib/money";
@@ -75,6 +82,28 @@ const byStore = (a: ProductOffer, b: ProductOffer) =>
   (a.price ?? Infinity) - (b.price ?? Infinity);
 const daysOf = (o: ProductOffer) => o.maxDays ?? o.minDays ?? 0;
 
+/** Сортування пропозицій: за ціною, за виробником і за номером */
+const SORTS = [
+  { value: "price", label: "Ціна" },
+  { value: "brand", label: "Виробник" },
+  { value: "num", label: "Номер" },
+];
+const minPrice = (offers: ProductOffer[]) =>
+  Math.min(...offers.map((o) => o.price ?? Infinity));
+
+/**
+ * Назва локального складу (магазину): гостям бекенд не віддає `name`,
+ * тому місто беремо з публічної примітки: «Товар на складі м. Львів, …».
+ */
+const shopLabel = (store: ProductOffer["store"]) => {
+  if (!store?.isLocal) return null;
+  return (
+    store.name?.trim() ||
+    /м\.\s*([^,]+)/.exec(store.publicNote ?? "")?.[1]?.trim() ||
+    (store.number ? `Склад № ${store.number}` : null)
+  );
+};
+
 function bounds(values: number[]): Range {
   const clean = values.filter((v) => Number.isFinite(v));
   if (!clean.length) return { min: 0, max: 0 };
@@ -100,7 +129,7 @@ function Group({
   const [open, setOpen] = useState(true);
 
   return (
-    <div className="flex flex-col gap-2 border-t border-[#e6e6e6] py-4">
+    <div className="flex flex-col gap-2 border-t border-[#e6e6e6] py-3">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
@@ -238,10 +267,7 @@ function OfferLine({
      строк, номер складу й час оновлення — в підказці над значком */
   /* Гостям бекенд не віддає назву складу, але в публічній примітці магазину
      є місто: «Товар на складі м. Львів, магазин на Городоцькій» */
-  const city = store?.isLocal
-    ? /м\.\s*([^,]+)/.exec(store.publicNote ?? "")?.[1]?.trim()
-    : undefined;
-  const label = store?.name || city || days;
+  const label = store?.name || shopLabel(store) || days;
   const daysText = (
     <span
       className={cn(
@@ -296,7 +322,7 @@ function OfferLine({
     );
 
   return (
-    <div className="grid min-h-[42px] grid-cols-[120px_40px_70px_92px] items-center gap-x-1.5 md:grid-cols-[120px_30px_70px_140px] md:gap-x-5 lg:grid-cols-[148px_40px_80px_128px] lg:gap-10">
+    <div className="grid min-h-9 grid-cols-[120px_40px_70px_92px] items-center gap-x-1.5 md:grid-cols-[120px_30px_70px_140px] md:gap-x-5 lg:grid-cols-[148px_40px_80px_128px] lg:gap-10">
       <div className="flex min-w-0 items-center gap-2.5 lg:gap-5">
         <span className="flex w-[44px] shrink-0 items-center gap-1 lg:w-[52px]">
           {store?.isLocal ? (
@@ -650,7 +676,7 @@ function ProductBlock({
     : offers.slice(0, LINES);
 
   const lines = (
-    <div className="flex w-full flex-col gap-2.5 lg:gap-5">
+    <div className="flex w-full flex-col gap-2 lg:gap-2.5">
       {shown.map((o) => (
         <OfferLine
           key={o.id}
@@ -717,7 +743,7 @@ function ProductBlock({
           />
           <ProductInfo product={product} />
         </div>
-        <div className="flex w-[516px] shrink-0 flex-col items-end gap-6">
+        <div className="flex w-[516px] shrink-0 flex-col items-end gap-3">
           {lines}
           {pager}
           {more}
@@ -765,6 +791,16 @@ function Highlight({
       ? "В наявності"
       : (offer.deliveryDays ?? "—");
 
+  /* Де саме товар є в наших магазинах: показуємо підказкою біля «Очікується».
+     Гостям бекенд не віддає назви складів, тож без назви пишемо «Магазин» */
+  const shops = product.offers
+    .filter((o) => o.store?.isLocal && inStock(o))
+    .map((o) => ({
+      key: o.id,
+      name: shopLabel(o.store) ?? "Магазин",
+      count: isUnlimited(o) ? "є" : `${o.count ?? 0} шт`,
+    }));
+
   /* Аналог веде на власну сторінку; власний товар — це поточна сторінка */
   const open = (text: string) =>
     product.href ? (
@@ -802,7 +838,36 @@ function Highlight({
               </span>
             </p>
             <p className="flex gap-2.5">
-              Очікується: <span className="font-semibold">{waiting}</span>
+              Очікується:{" "}
+              {shops.length > 0 ? (
+                <Tooltip
+                  label={`Є в наших магазинах: ${shops.map((s) => s.name).join(", ")}`}
+                  align="end-until-lg"
+                  trigger={
+                    <span
+                      className={cn(
+                        "flex items-center gap-1 font-semibold underline decoration-dotted decoration-1 underline-offset-[3px]",
+                        waiting === "В наявності" && "text-shop-green",
+                      )}
+                    >
+                      {waiting}
+                      <Info aria-hidden className="size-3.5" strokeWidth={2} />
+                    </span>
+                  }
+                >
+                  <span className="flex min-w-[160px] flex-col gap-1">
+                    <span className="font-semibold">Є в наших магазинах:</span>
+                    {shops.map((s) => (
+                      <span key={s.key} className="flex justify-between gap-5">
+                        <span>{s.name}</span>
+                        <span className="tnum font-semibold">{s.count}</span>
+                      </span>
+                    ))}
+                  </span>
+                </Tooltip>
+              ) : (
+                <span className="font-semibold">{waiting}</span>
+              )}
             </p>
           </div>
         </div>
@@ -887,7 +952,25 @@ export function ProductOffers({
     [all],
   );
 
+  /* Магазини (локальні склади), що трапляються в пропозиціях */
+  const shops = useMemo(
+    () =>
+      [
+        ...new Set(
+          flat.flatMap(({ o }) => {
+            const l = shopLabel(o.store);
+            return l ? [l] : [];
+          }),
+        ),
+      ].sort((a, b) => a.localeCompare(b, "uk")),
+    [flat],
+  );
+
+  const [sort, setSort] = useState("price");
+  const [descending, setDescending] = useState(false);
+
   const [filterOpen, setFilterOpen] = useState(true);
+  const [pickedShops, setPickedShops] = useState<string[]>([]);
   const [name, setName] = useState("");
   const [brandQuery, setBrandQuery] = useState("");
   const [picked, setPicked] = useState<string[]>([]);
@@ -903,6 +986,8 @@ export function ProductOffers({
     if (needle && !`${p.name} ${p.num}`.toLowerCase().includes(needle))
       return false;
     if (picked.length && !picked.includes(p.brand ?? "")) return false;
+    if (pickedShops.length && !pickedShops.includes(shopLabel(o.store) ?? ""))
+      return false;
     if (o.price != null && (o.price < price.min || o.price > price.max))
       return false;
     const d = daysOf(o);
@@ -914,19 +999,45 @@ export function ProductOffers({
 
   /* Склади кожного товару: свої магазини зверху, далі найдешевші, щоб
      «показати всі» ховало дорожчі, а не вигідні */
+  /* Ціни рахуємо з урахуванням напрямку, а свої магазини лишаються зверху */
+  const dir = descending ? -1 : 1;
+  const byOffer = (a: ProductOffer, b: ProductOffer) =>
+    sort === "price"
+      ? Number(Boolean(b.store?.isLocal)) - Number(Boolean(a.store?.isLocal)) ||
+        dir * ((a.price ?? Infinity) - (b.price ?? Infinity))
+      : byStore(a, b);
   const visible = (p: OfferProduct) =>
-    p.offers.filter((o) => pass(p, o)).sort(byStore);
+    p.offers.filter((o) => pass(p, o)).sort(byOffer);
 
+  const hasLocal = (offers: ProductOffer[]) =>
+    offers.some((o) => o.store?.isLocal);
   const ownOffers = visible(own);
+  /* Власний товар завжди першим, а аналоги йдуть у вибраному порядку */
   const analogueBlocks = analogues
     .map((p) => ({ p, offers: visible(p) }))
     .filter((b) => b.offers.length > 0)
-    /* Аналоги, що є в наших магазинах, — першими (сортування стабільне) */
-    .sort(
-      (a, b) =>
-        Number(b.offers.some((o) => o.store?.isLocal)) -
-        Number(a.offers.some((o) => o.store?.isLocal)),
-    );
+    .sort((a, b) => {
+      /* Аналоги, що є в наших магазинах, — першими за будь-якого сортування,
+         а всередині груп (свої й решта) — за вибраним порядком */
+      const local = Number(hasLocal(b.offers)) - Number(hasLocal(a.offers));
+      if (local) return local;
+      if (sort === "brand")
+        return (
+          dir * (a.p.brand ?? "").localeCompare(b.p.brand ?? "", "uk") ||
+          a.p.num.localeCompare(b.p.num, "uk", { numeric: true })
+        );
+      if (sort === "num")
+        return (
+          dir * a.p.num.localeCompare(b.p.num, "uk", { numeric: true }) ||
+          (a.p.brand ?? "").localeCompare(b.p.brand ?? "", "uk")
+        );
+      /* Серед «своїх» порівнюємо ціни їхніх складів, а не чужих */
+      const key = (offers: ProductOffer[]) =>
+        minPrice(
+          hasLocal(offers) ? offers.filter((o) => o.store?.isLocal) : offers,
+        );
+      return dir * (key(a.offers) - key(b.offers));
+    });
 
   /* Виділені пропозиції беремо з того, що пройшло фільтри й є в наявності */
   const buyable = flat.filter(({ p, o }) => pass(p, o) && inStock(o));
@@ -953,6 +1064,64 @@ export function ProductOffers({
       prev.includes(b) ? prev.filter((x) => x !== b) : [...prev, b],
     );
 
+  /* Чипи застосованих фільтрів: кожен знімається окремо */
+  const rangeChip = (
+    key: string,
+    title: string,
+    unit: string,
+    value: Range,
+    base: Range,
+    clear: () => void,
+  ): Chip[] =>
+    value.min === base.min && value.max === base.max
+      ? []
+      : [
+          {
+            key,
+            label: `${title}: ${value.min}–${value.max}${unit}`,
+            onRemove: clear,
+          },
+        ];
+  const chips: Chip[] = [
+    ...(needle
+      ? [
+          {
+            key: "name",
+            label: `Назва: ${name.trim()}`,
+            onRemove: () => setName(""),
+          },
+        ]
+      : []),
+    ...picked.map((b) => ({
+      key: `brand-${b}`,
+      label: b,
+      onRemove: () => toggleBrand(b),
+    })),
+    ...pickedShops.map((s) => ({
+      key: `shop-${s}`,
+      label: `Магазин: ${s}`,
+      onRemove: () => setPickedShops((prev) => prev.filter((x) => x !== s)),
+    })),
+    ...rangeChip("price", "Ціна", " грн", price, priceBounds, () =>
+      setPrice(priceBounds),
+    ),
+    ...rangeChip("days", "Доставка", " дн.", days, dayBounds, () =>
+      setDays(dayBounds),
+    ),
+    ...rangeChip("count", "Кількість", " шт.", count, countBounds, () =>
+      setCount(countBounds),
+    ),
+  ];
+  const resetFilters = () => {
+    setName("");
+    setBrandQuery("");
+    setPicked([]);
+    setPickedShops([]);
+    setPrice(priceBounds);
+    setDays(dayBounds);
+    setCount(countBounds);
+  };
+
   const [analoguesOpen, setAnaloguesOpen] = useState(false);
   const [analoguePage, setAnaloguePage] = useState(1);
   const analoguePages = Math.ceil(analogueBlocks.length / ANALOGUES_PER_PAGE);
@@ -970,8 +1139,31 @@ export function ProductOffers({
   const nothing = ownOffers.length === 0 && analogueBlocks.length === 0;
 
   return (
-    <div className="flex flex-col gap-2.5 lg:gap-5">
-      <div className="flex lg:justify-end">
+    <div className="flex flex-col gap-2.5 lg:gap-4">
+      <div className="flex flex-col gap-2.5 lg:flex-row lg:justify-end">
+        <div className="flex items-center gap-2.5">
+          <Dropdown
+            label="СОРТУВАТИ ЗА :"
+            value={sort}
+            onChange={setSort}
+            options={SORTS}
+            className="min-w-0 flex-1 lg:w-[250px] lg:flex-none"
+          />
+          <button
+            type="button"
+            onClick={() => setDescending((d) => !d)}
+            aria-label={descending ? "За зростанням" : "За спаданням"}
+            className="flex size-[42px] shrink-0 cursor-pointer items-center justify-center rounded-[4px] border border-orange"
+          >
+            <ShopIcon
+              name="sort-arrow"
+              className={cn(
+                "transition-transform",
+                !descending && "rotate-180",
+              )}
+            />
+          </button>
+        </div>
         <Dropdown
           label="ВАЛЮТА:"
           value={currency.code}
@@ -994,6 +1186,8 @@ export function ProductOffers({
           className={cn("transition-transform", !filterOpen && "rotate-180")}
         />
       </button>
+
+      <FilterChips chips={chips} onReset={resetFilters} />
 
       <div className="flex flex-col gap-5 lg:flex-row lg:items-start">
         <aside
@@ -1061,6 +1255,36 @@ export function ProductOffers({
             </Group>
           )}
 
+          {shops.length > 0 && (
+            <Group title="Магазин">
+              <ul className="flex flex-col gap-2.5">
+                {shops.map((s) => {
+                  const checked = pickedShops.includes(s);
+                  return (
+                    <li key={s}>
+                      <button
+                        type="button"
+                        role="checkbox"
+                        aria-checked={checked}
+                        onClick={() =>
+                          setPickedShops((prev) =>
+                            prev.includes(s)
+                              ? prev.filter((x) => x !== s)
+                              : [...prev, s],
+                          )
+                        }
+                        className="flex w-full cursor-pointer items-start gap-2 px-2 py-1 text-left text-[16px] leading-[1.5] text-shop-black"
+                      >
+                        <Checkbox checked={checked} />
+                        <span className="min-w-0 flex-1 break-words">{s}</span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </Group>
+          )}
+
           <Group title="Діапазон цін">
             <RangeFilter
               label="Ціна"
@@ -1087,53 +1311,68 @@ export function ProductOffers({
           </Group>
         </aside>
 
-        <div className="flex min-w-0 flex-1 flex-col gap-[30px]">
+        <div className="flex min-w-0 flex-1 flex-col gap-5">
           {(cheapest || fastest || local) && (
-            <div className="flex flex-col gap-2.5 lg:flex-row lg:flex-wrap">
-              {cheapest && (
-                <Highlight
-                  title="Мінімальна ціна"
-                  icon={
-                    <span className="flex items-center gap-1.5">
-                      $
-                      <ChevronDown
-                        aria-hidden
-                        className="size-5"
-                        strokeWidth={1.75}
+            <CollapseProvider>
+              <div className="flex flex-col gap-2.5">
+                <CollapseToggle className="self-end" />
+                <CollapseBody>
+                  <div className="flex flex-col gap-2.5 lg:flex-row lg:flex-wrap">
+                    {cheapest && (
+                      <Highlight
+                        title="Мінімальна ціна"
+                        icon={
+                          <span className="flex items-center gap-1.5">
+                            $
+                            <ChevronDown
+                              aria-hidden
+                              className="size-5"
+                              strokeWidth={1.75}
+                            />
+                          </span>
+                        }
+                        product={cheapest.p}
+                        offer={cheapest.o}
+                        currency={currency}
+                        maxCount={maxCount}
                       />
-                    </span>
-                  }
-                  product={cheapest.p}
-                  offer={cheapest.o}
-                  currency={currency}
-                  maxCount={maxCount}
-                />
-              )}
-              {fastest && (
-                <Highlight
-                  title="Найшвидша доставка"
-                  icon={
-                    <Zap aria-hidden className="size-5" strokeWidth={1.75} />
-                  }
-                  product={fastest.p}
-                  offer={fastest.o}
-                  currency={currency}
-                  maxCount={maxCount}
-                />
-              )}
-              {local && (
-                <Highlight
-                  title="Наявність у нас"
-                  icon={
-                    <House aria-hidden className="size-5" strokeWidth={1.75} />
-                  }
-                  product={local.p}
-                  offer={local.o}
-                  currency={currency}
-                  maxCount={maxCount}
-                />
-              )}
-            </div>
+                    )}
+                    {fastest && (
+                      <Highlight
+                        title="Найшвидша доставка"
+                        icon={
+                          <Zap
+                            aria-hidden
+                            className="size-5"
+                            strokeWidth={1.75}
+                          />
+                        }
+                        product={fastest.p}
+                        offer={fastest.o}
+                        currency={currency}
+                        maxCount={maxCount}
+                      />
+                    )}
+                    {local && (
+                      <Highlight
+                        title="Наявність у нас"
+                        icon={
+                          <House
+                            aria-hidden
+                            className="size-5"
+                            strokeWidth={1.75}
+                          />
+                        }
+                        product={local.p}
+                        offer={local.o}
+                        currency={currency}
+                        maxCount={maxCount}
+                      />
+                    )}
+                  </div>
+                </CollapseBody>
+              </div>
+            </CollapseProvider>
           )}
 
           {nothing ? (
@@ -1141,9 +1380,9 @@ export function ProductOffers({
               Пропозицій не знайдено
             </p>
           ) : (
-            <div className="flex flex-col gap-[30px]">
+            <div className="flex flex-col gap-5">
               {ownOffers.length > 0 && (
-                <section className="flex flex-col gap-6 border-b border-line pb-4">
+                <section className="flex flex-col gap-3 border-b border-line pb-3">
                   <GroupHead />
                   <ProductBlock
                     product={own}
@@ -1159,7 +1398,7 @@ export function ProductOffers({
                   {analogueShown.map(({ p, offers }, i) => (
                     <section
                       key={p.key}
-                      className="flex flex-col gap-6 border-b border-line pb-4"
+                      className="flex flex-col gap-3 border-b border-line pb-3"
                     >
                       <GroupHead
                         tag={i === 0 ? "АНАЛОГИ (ЗАМІННИКИ)" : undefined}

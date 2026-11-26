@@ -23,6 +23,8 @@ export function BannerRotator({
 }) {
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
+  /* Банери, чий оригінал не завантажився: для них беремо мініатюру */
+  const [failed, setFailed] = useState<Set<string>>(new Set());
   const count = items.length;
   const current = Math.min(index, count - 1);
 
@@ -46,8 +48,9 @@ export function BannerRotator({
         const shown = i === current;
         const picture = (
           <Image
-            src={b.image}
+            src={failed.has(b.id) ? b.thumb : b.image}
             alt={b.alt}
+            onError={() => setFailed((prev) => new Set(prev).add(b.id))}
             fill
             unoptimized
             priority={i === 0}

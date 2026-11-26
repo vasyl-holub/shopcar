@@ -39,7 +39,7 @@ export function ProductTabs({
   ];
 
   return (
-    <div className="flex flex-col gap-[30px] lg:gap-10">
+    <div className="flex flex-col gap-5 lg:gap-6">
       <div
         role="tablist"
         className="flex flex-col gap-2.5 lg:flex-row lg:gap-8"

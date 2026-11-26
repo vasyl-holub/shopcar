@@ -3,6 +3,8 @@ import { gql } from "@/lib/api/graphql";
 export type Banner = {
   id: string;
   image: string;
+  /** Мініатюра з API: запасна, якщо оригінал не завантажився */
+  thumb: string;
   /** Куди веде весь банер: внутрішній шлях або зовнішня адреса */
   href: string;
   external: boolean;
@@ -58,6 +60,17 @@ function resolveHref(raw: string | null | undefined) {
   }
 }
 
+/**
+ * Поле `image` віддає мініатюру 320×100 (`/media/thumbs/adts/<назва>_320x100.webp`),
+ * а на всю ширину сторінки вона розмита. Оригінал лежить поруч,
+ * в `/media/adts/<назва>.<розширення>`; розширення оригіналу невідоме,
+ * тому беремо webp, а мініатюра лишається запасною (див. BannerRotator).
+ */
+function fullSize(thumb: string) {
+  const match = /^(.*\/media)\/thumbs\/(adts\/.+)_\d+x\d+\.\w+$/.exec(thumb);
+  return match ? `${match[1]}/${match[2]}.webp` : thumb;
+}
+
 /** Активні банери вказаного місця, у порядку сортування з адмінки */
 export async function getBanners(place: keyof typeof TYPE): Promise<Banner[]> {
   try {
@@ -83,7 +96,8 @@ export async function getBanners(place: keyof typeof TYPE): Promise<Banner[]> {
       .sort((a, b) => (a.sort ?? 0) - (b.sort ?? 0))
       .map((a) => ({
         id: a.id,
-        image: a.image!,
+        image: fullSize(a.image!),
+        thumb: a.image!,
         alt: a.name?.trim() || "Акція",
         ...resolveHref(a.url),
       }));

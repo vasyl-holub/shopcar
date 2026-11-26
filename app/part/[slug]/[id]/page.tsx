@@ -6,6 +6,11 @@ import { SpecialOffers } from "@/components/product/special-offers";
 import { PromoBanner, PromoStrip } from "@/components/shop/promo";
 import { FavoriteHeart } from "@/components/shop/favorite-heart";
 import { ProductGallery } from "@/components/product/product-gallery";
+import {
+  CollapseBody,
+  CollapseProvider,
+  CollapseToggle,
+} from "@/components/ui/collapse";
 import { ProductTabs } from "@/components/product/product-tabs";
 import { StarRating } from "@/components/product/star-rating";
 import { PartReviews } from "@/components/catalog/part-reviews";
@@ -121,67 +126,79 @@ export default async function PartPage({
           items={[{ label: "Головна", href: "/" }, { label: title }]}
         />
 
-        <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:flex lg:flex-wrap lg:items-start lg:gap-[30px]">
-          <ProductGallery photos={product.images} alt={title} />
+        {/* Опис товару можна згорнути до заголовка: фото, ціна й характеристики
+            ховаються, а кнопка лишається поруч із заголовком */}
+        <CollapseProvider>
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:flex lg:flex-wrap lg:items-start lg:gap-[30px]">
+            <CollapseBody>
+              <ProductGallery photos={product.images} alt={title} />
+            </CollapseBody>
 
-          <div className="flex min-w-0 flex-1 flex-col gap-[30px] lg:min-w-[320px] lg:py-5">
-            <div className="flex items-center gap-5">
-              <h1 className="min-w-0 flex-1 text-[20px] font-normal leading-[22px] text-shop-black lg:text-[26px] lg:leading-8">
-                {title}
-              </h1>
-              <FavoriteHeart
-                productId={product.id}
-                initial={product.isFavorite}
-                className="shrink-0"
-              />
-            </div>
+            <div className="flex min-w-0 flex-1 flex-col gap-[30px] lg:min-w-[320px] lg:py-5">
+              <div className="flex items-center gap-5">
+                <h1 className="min-w-0 flex-1 text-[20px] font-normal leading-[22px] text-shop-black lg:text-[26px] lg:leading-8">
+                  {title}
+                </h1>
+                <FavoriteHeart
+                  productId={product.id}
+                  initial={product.isFavorite}
+                  className="shrink-0"
+                />
+                <CollapseToggle className="shrink-0" />
+              </div>
 
-            {/* Ціна й купівля одразу в першому екрані: деталі складів нижче,
+              <CollapseBody>
+                {/* Ціна й купівля одразу в першому екрані: деталі складів нижче,
                 у вкладці «Пропозиції» */}
-            {best?.price != null && (
-              <div className="flex flex-col items-start gap-3">
-                <p className="flex flex-col gap-1 text-shop-black">
-                  <span className="text-[14px] leading-[1.4] text-muted">
-                    {user ? "Ваша ціна:" : "Ціна від:"}
-                  </span>
-                  <span className="tnum text-h1 font-semibold leading-[1.2]">
-                    {formatMoney(best.price).replace(/ грн\.$/, " грн")}
-                  </span>
-                </p>
-                <div className="w-[260px] max-w-full">
-                  <BuyButton
-                    variant="primary"
-                    offerId={best.id}
-                    disabled={!buyable}
-                    label={product.name}
-                  />
-                </div>
-              </div>
-            )}
+                {best?.price != null && (
+                  <div className="flex flex-col items-start gap-3">
+                    <p className="flex flex-col gap-1 text-shop-black">
+                      <span className="text-[14px] leading-[1.4] text-muted">
+                        {user ? "Ваша ціна:" : "Ціна від:"}
+                      </span>
+                      <span className="tnum text-h1 font-semibold leading-[1.2]">
+                        {formatMoney(best.price).replace(/ грн\.$/, " грн")}
+                      </span>
+                    </p>
+                    <div className="w-[260px] max-w-full">
+                      <BuyButton
+                        variant="primary"
+                        offerId={best.id}
+                        disabled={!buyable}
+                        label={product.name}
+                      />
+                    </div>
+                  </div>
+                )}
 
-            <dl className="flex w-[332px] max-w-full flex-col gap-4 text-[16px] leading-[1.5] text-shop-black">
-              {specRows.map((row, i) => (
-                <div key={`${row.label}-${i}`} className="flex items-end gap-2">
-                  <dt className="shrink-0">{row.label}:</dt>
-                  <span
-                    aria-hidden
-                    className="mb-1.5 h-0 flex-1 border-b border-[#e6e6e6]"
-                  />
-                  <dd className="w-[150px] shrink-0 font-semibold">
-                    {row.value}
-                  </dd>
-                </div>
-              ))}
-              <div className="flex items-center gap-2.5">
-                <dt className="shrink-0">Рейтинг:</dt>
-                <dd className="flex items-center gap-3">
-                  <StarRating value={product.rating} />
-                  <span>({voteCount})</span>
-                </dd>
-              </div>
-            </dl>
+                <dl className="flex w-[332px] max-w-full flex-col gap-4 text-[16px] leading-[1.5] text-shop-black">
+                  {specRows.map((row, i) => (
+                    <div
+                      key={`${row.label}-${i}`}
+                      className="flex items-end gap-2"
+                    >
+                      <dt className="shrink-0">{row.label}:</dt>
+                      <span
+                        aria-hidden
+                        className="mb-1.5 h-0 flex-1 border-b border-[#e6e6e6]"
+                      />
+                      <dd className="w-[150px] shrink-0 font-semibold">
+                        {row.value}
+                      </dd>
+                    </div>
+                  ))}
+                  <div className="flex items-center gap-2.5">
+                    <dt className="shrink-0">Рейтинг:</dt>
+                    <dd className="flex items-center gap-3">
+                      <StarRating value={product.rating} />
+                      <span>({voteCount})</span>
+                    </dd>
+                  </div>
+                </dl>
+              </CollapseBody>
+            </div>
           </div>
-        </div>
+        </CollapseProvider>
 
         <ProductTabs
           reviewCount={reviewCount}
