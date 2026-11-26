@@ -17,11 +17,15 @@ export function BannerRotator({
   items,
   className,
   frameClassName,
+  fit = "natural",
 }: {
   items: Banner[];
   className: string;
   /** Рамка, в якій стоїть картинка, коли фон банера тягнеться на всю ширину */
   frameClassName?: string;
+  /** natural — з lg картинка у своїх пропорціях; cover — заповнює рамку, а
+      поля з картинки обрізаються (рамка сама задає висоту) */
+  fit?: "natural" | "cover";
 }) {
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
@@ -50,7 +54,12 @@ export function BannerRotator({
           найвищий. З lg картинка йде у своїх пропорціях, тож нічого не
           обрізається (кнопка не липне до краю); нижче — фіксована висота
           з обрізанням, як у макеті. */}
-      <div className={cn("relative mx-auto grid h-full", frameClassName)}>
+      <div
+        className={cn(
+          "relative mx-auto grid h-full overflow-hidden",
+          frameClassName,
+        )}
+      >
         {items.map((b, i) => {
           const shown = i === current;
           const picture = (
@@ -61,7 +70,10 @@ export function BannerRotator({
               onError={() => setFailed((prev) => new Set(prev).add(b.id))}
               loading={i === 0 ? "eager" : "lazy"}
               draggable={false}
-              className="absolute inset-0 size-full object-cover lg:static lg:h-auto lg:w-full"
+              className={cn(
+                "absolute inset-0 size-full object-cover",
+                fit === "natural" && "lg:static lg:h-auto lg:w-full",
+              )}
             />
           );
           const link = cn(

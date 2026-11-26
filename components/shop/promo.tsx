@@ -24,7 +24,8 @@ export async function PromoStrip({ brand, title, href }: PromoContent) {
       <BannerRotator
         items={banners}
         className="h-[133px] md:h-20 lg:h-auto"
-        frameClassName="max-w-[1440px] lg:px-10"
+        fit="cover"
+        frameClassName="lg:h-auto lg:w-[calc(100%-80px)] lg:max-w-[1360px] lg:aspect-[1360/98]"
       />
     );
   }

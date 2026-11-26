@@ -91,6 +91,10 @@ const SORTS = [
 const minPrice = (offers: ProductOffer[]) =>
   Math.min(...offers.map((o) => o.price ?? Infinity));
 
+/** Склад для фільтра «Магазин»: назва, а в локального ще й місто з примітки */
+const filterShop = (store: ProductOffer["store"]) =>
+  store?.name?.trim() || shopLabel(store) || null;
+
 /**
  * Назва локального складу (магазину): гостям бекенд не віддає `name`,
  * тому місто беремо з публічної примітки: «Товар на складі м. Львів, …».
@@ -952,19 +956,24 @@ export function ProductOffers({
     [all],
   );
 
-  /* Магазини (локальні склади), що трапляються в пропозиціях */
-  const shops = useMemo(
-    () =>
-      [
-        ...new Set(
-          flat.flatMap(({ o }) => {
-            const l = shopLabel(o.store);
-            return l ? [l] : [];
-          }),
-        ),
-      ].sort((a, b) => a.localeCompare(b, "uk")),
-    [flat],
-  );
+  /* Склади з пропозицій для фільтра: свої магазини першими, далі решта за
+     алфавітом. Назви чужих складів бекенд віддає лише авторизованим, тож
+     гостю вони не потраплять у список. */
+  const shops = useMemo(() => {
+    const byName = new Map<string, boolean>();
+    for (const { o } of flat) {
+      const l = filterShop(o.store);
+      if (l)
+        byName.set(l, (byName.get(l) ?? false) || Boolean(o.store?.isLocal));
+    }
+    return [...byName]
+      .sort(
+        ([a, la], [b, lb]) =>
+          Number(lb) - Number(la) || a.localeCompare(b, "uk"),
+      )
+      .map(([name]) => name);
+  }, [flat]);
+  const [showShops, setShowShops] = useState(false);
 
   const [sort, setSort] = useState("price");
   const [descending, setDescending] = useState(false);
@@ -986,7 +995,7 @@ export function ProductOffers({
     if (needle && !`${p.name} ${p.num}`.toLowerCase().includes(needle))
       return false;
     if (picked.length && !picked.includes(p.brand ?? "")) return false;
-    if (pickedShops.length && !pickedShops.includes(shopLabel(o.store) ?? ""))
+    if (pickedShops.length && !pickedShops.includes(filterShop(o.store) ?? ""))
       return false;
     if (o.price != null && (o.price < price.min || o.price > price.max))
       return false;
@@ -1147,7 +1156,7 @@ export function ProductOffers({
             value={sort}
             onChange={setSort}
             options={SORTS}
-            className="min-w-0 flex-1 lg:w-[250px] lg:flex-none"
+            className="min-w-0 flex-1 lg:w-[301px] lg:flex-none"
           />
           <button
             type="button"
@@ -1255,35 +1264,58 @@ export function ProductOffers({
             </Group>
           )}
 
-          {shops.length > 0 && (
-            <Group title="Магазин">
+          <Group title="Магазин">
+            {shops.length === 0 ? (
+              <p className="px-2 py-1 text-[14px] leading-[1.4] text-muted">
+                Немає даних про магазини для цього товару
+              </p>
+            ) : (
               <ul className="flex flex-col gap-2.5">
-                {shops.map((s) => {
-                  const checked = pickedShops.includes(s);
-                  return (
-                    <li key={s}>
-                      <button
-                        type="button"
-                        role="checkbox"
-                        aria-checked={checked}
-                        onClick={() =>
-                          setPickedShops((prev) =>
-                            prev.includes(s)
-                              ? prev.filter((x) => x !== s)
-                              : [...prev, s],
-                          )
-                        }
-                        className="flex w-full cursor-pointer items-start gap-2 px-2 py-1 text-left text-[16px] leading-[1.5] text-shop-black"
-                      >
-                        <Checkbox checked={checked} />
-                        <span className="min-w-0 flex-1 break-words">{s}</span>
-                      </button>
-                    </li>
-                  );
-                })}
+                {(showShops ? shops : shops.slice(0, BRANDS_VISIBLE)).map(
+                  (s) => {
+                    const checked = pickedShops.includes(s);
+                    return (
+                      <li key={s}>
+                        <button
+                          type="button"
+                          role="checkbox"
+                          aria-checked={checked}
+                          onClick={() =>
+                            setPickedShops((prev) =>
+                              prev.includes(s)
+                                ? prev.filter((x) => x !== s)
+                                : [...prev, s],
+                            )
+                          }
+                          className="flex w-full cursor-pointer items-start gap-2 px-2 py-1 text-left text-[16px] leading-[1.5] text-shop-black"
+                        >
+                          <Checkbox checked={checked} />
+                          <span className="min-w-0 flex-1 break-words">
+                            {s}
+                          </span>
+                        </button>
+                      </li>
+                    );
+                  },
+                )}
+                {shops.length > BRANDS_VISIBLE && (
+                  <li>
+                    <button
+                      type="button"
+                      onClick={() => setShowShops((v) => !v)}
+                      className="flex cursor-pointer items-center gap-4 px-2 py-1 text-[16px] font-semibold leading-[1.5] text-orange"
+                    >
+                      {showShops ? "Згорнути" : "Показати всі"}
+                      <ShopIcon
+                        name="chevron-down-orange"
+                        className={cn("size-5", showShops && "rotate-180")}
+                      />
+                    </button>
+                  </li>
+                )}
               </ul>
-            </Group>
-          )}
+            )}
+          </Group>
 
           <Group title="Діапазон цін">
             <RangeFilter
