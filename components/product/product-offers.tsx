@@ -306,8 +306,15 @@ function OfferLine({
           mark === "plain" ? (
             icon
           ) : (
-            <span className="inline-flex border-b border-dotted border-shop-black/60 pb-px">
+            <span className="relative inline-flex border-b border-dotted border-shop-black/60 pb-px">
               {icon}
+              {/* «i» як степінь у верхньому правому куті значка; позиціонуємо
+                  абсолютно, щоб вона не розширювала колонку зі значками */}
+              <Info
+                aria-hidden
+                className="absolute -right-2.5 -top-1 size-3 text-orange lg:-right-3 lg:-top-1.5 lg:size-3.5"
+                strokeWidth={2}
+              />
             </span>
           )
         }
