@@ -373,9 +373,9 @@ function OfferLine({
   );
 
   return (
-    <div className="grid min-h-9 grid-cols-[136px_36px_70px_92px] items-center gap-x-1.5 md:grid-cols-[140px_30px_70px_140px] md:gap-x-5 lg:grid-cols-[172px_40px_80px_128px] lg:gap-8">
+    <div className="grid min-h-9 grid-cols-[150px_32px_68px_90px] items-center gap-x-1.5 md:grid-cols-[168px_30px_70px_140px] md:gap-x-5 lg:grid-cols-[188px_40px_80px_128px] lg:gap-[26px]">
       <div className="flex min-w-0 items-center gap-2.5 lg:gap-3">
-        <span className="flex w-[44px] shrink-0 items-center gap-1 lg:w-[52px]">
+        <span className="flex w-[68px] shrink-0 items-center gap-1 lg:w-[76px]">
           {store?.isLocal ? (
             storeTip(<StoreIcon fallback="storage" className="h-5 lg:h-6" />)
           ) : (
@@ -519,7 +519,7 @@ function ColumnsHead({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        "grid grid-cols-[136px_36px_70px_92px] gap-x-1.5 text-[12px] font-semibold leading-[1.33] text-shop-black md:grid-cols-[140px_30px_70px_140px] md:gap-x-5 lg:grid-cols-[172px_40px_80px_128px] lg:gap-8 lg:text-[16px] lg:leading-[1.5]",
+        "grid grid-cols-[150px_32px_68px_90px] gap-x-1.5 text-[12px] font-semibold leading-[1.33] text-shop-black md:grid-cols-[168px_30px_70px_140px] md:gap-x-5 lg:grid-cols-[188px_40px_80px_128px] lg:gap-[26px] lg:text-[16px] lg:leading-[1.5]",
         className,
       )}
     >
