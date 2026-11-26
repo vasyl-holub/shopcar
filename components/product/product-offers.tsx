@@ -271,18 +271,6 @@ function OfferLine({
      строк, номер складу й час оновлення — в підказці над значком */
   /* Гостям бекенд не віддає назву складу, але в публічній примітці магазину
      є місто: «Товар на складі м. Львів, магазин на Городоцькій» */
-  const label = store?.name || shopLabel(store) || days;
-  const daysText = (
-    <span
-      className={cn(
-        "min-w-0 break-words text-[14px] font-semibold leading-[1.3] lg:text-[16px] lg:leading-[1.3]",
-        store?.isLocal ? "text-shop-green" : "text-orange",
-      )}
-    >
-      {label}
-    </span>
-  );
-
   const storeName = [store?.number ? `# ${store.number}` : "", store?.name]
     .filter(Boolean)
     .join(": ");
@@ -304,11 +292,26 @@ function OfferLine({
   add("Опис", store?.description);
   add("Дата доставки", days === "—" ? "" : days);
 
-  const storeTip = (icon: React.ReactNode) =>
-    rows.length === 0 && !store?.iconTitle ? (
+  /* Є що показати в підказці: значок і назва складу тоді підкреслені
+     пунктиром, а біля назви стоїть «i», як у плашках */
+  const hasCard = rows.length > 0 || Boolean(store?.iconTitle);
+  const storeTip = (icon: React.ReactNode, mark: "line" | "plain" = "line") =>
+    !hasCard ? (
       icon
     ) : (
-      <Tooltip label="Інформація про склад" trigger={icon}>
+      <Tooltip
+        label="Інформація про склад"
+        className={mark === "plain" ? "min-w-0" : undefined}
+        trigger={
+          mark === "plain" ? (
+            icon
+          ) : (
+            <span className="inline-flex border-b border-dotted border-shop-black/60 pb-px">
+              {icon}
+            </span>
+          )
+        }
+      >
         <span className="flex min-w-[210px] max-w-[300px] flex-col gap-[5px]">
           {store?.iconTitle && (
             <span className="font-semibold">{store.iconTitle}</span>
@@ -325,9 +328,35 @@ function OfferLine({
       </Tooltip>
     );
 
+  const label = store?.name || shopLabel(store) || days;
+  const daysText = (
+    <span
+      className={cn(
+        "min-w-0 break-words text-[14px] font-semibold leading-[1.3] lg:text-[16px] lg:leading-[1.3]",
+        store?.isLocal ? "text-shop-green" : "text-orange",
+      )}
+    >
+      <span
+        className={cn(
+          hasCard &&
+            "underline decoration-dotted decoration-1 underline-offset-[3px]",
+        )}
+      >
+        {label}
+      </span>
+      {hasCard && (
+        <Info
+          aria-hidden
+          className="relative -top-1 ml-0.5 inline size-3 lg:-top-1.5 lg:size-3.5"
+          strokeWidth={2}
+        />
+      )}
+    </span>
+  );
+
   return (
-    <div className="grid min-h-9 grid-cols-[120px_40px_70px_92px] items-center gap-x-1.5 md:grid-cols-[120px_30px_70px_140px] md:gap-x-5 lg:grid-cols-[148px_40px_80px_128px] lg:gap-10">
-      <div className="flex min-w-0 items-center gap-2.5 lg:gap-5">
+    <div className="grid min-h-9 grid-cols-[136px_36px_70px_92px] items-center gap-x-1.5 md:grid-cols-[140px_30px_70px_140px] md:gap-x-5 lg:grid-cols-[172px_40px_80px_128px] lg:gap-8">
+      <div className="flex min-w-0 items-center gap-2.5 lg:gap-3">
         <span className="flex w-[44px] shrink-0 items-center gap-1 lg:w-[52px]">
           {store?.isLocal ? (
             storeTip(<StoreIcon fallback="storage" className="h-5 lg:h-6" />)
@@ -358,22 +387,9 @@ function OfferLine({
           )}
         </span>
 
-        {typeof store?.workUpTo === "number" ? (
-          <Tooltip
-            label="Час роботи складу"
-            trigger={daysText}
-            className="min-w-0"
-          >
-            <span className="whitespace-nowrap">
-              Працює до:{" "}
-              <span className="text-muted">
-                {String(store.workUpTo).padStart(2, "0")}:00
-              </span>
-            </span>
-          </Tooltip>
-        ) : (
-          daysText
-        )}
+        {/* Назва чи строк відкривають ту саму картку складу, що й значок
+            (в ній є і «Працює до») */}
+        {storeTip(daysText, "plain")}
       </div>
 
       <span className="flex items-center">
@@ -485,7 +501,7 @@ function ColumnsHead({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        "grid grid-cols-[120px_40px_70px_92px] gap-x-1.5 text-[12px] font-semibold leading-[1.33] text-shop-black md:grid-cols-[120px_30px_70px_140px] md:gap-x-5 lg:grid-cols-[148px_40px_80px_128px] lg:gap-10 lg:text-[16px] lg:leading-[1.5]",
+        "grid grid-cols-[136px_36px_70px_92px] gap-x-1.5 text-[12px] font-semibold leading-[1.33] text-shop-black md:grid-cols-[140px_30px_70px_140px] md:gap-x-5 lg:grid-cols-[172px_40px_80px_128px] lg:gap-8 lg:text-[16px] lg:leading-[1.5]",
         className,
       )}
     >
@@ -850,12 +866,18 @@ function Highlight({
                   trigger={
                     <span
                       className={cn(
-                        "flex items-center gap-1 font-semibold underline decoration-dotted decoration-1 underline-offset-[3px]",
+                        "font-semibold",
                         waiting === "В наявності" && "text-shop-green",
                       )}
                     >
-                      {waiting}
-                      <Info aria-hidden className="size-3.5" strokeWidth={2} />
+                      <span className="underline decoration-dotted decoration-1 underline-offset-[3px]">
+                        {waiting}
+                      </span>
+                      <Info
+                        aria-hidden
+                        className="relative -top-1 ml-0.5 inline size-3"
+                        strokeWidth={2}
+                      />
                     </span>
                   }
                 >

@@ -28,7 +28,7 @@ export function Tooltip({
         tabIndex={0}
         role="img"
         aria-label={label}
-        className="inline-flex cursor-pointer items-center outline-none"
+        className="inline-flex min-w-0 cursor-pointer items-center outline-none"
       >
         {trigger}
       </span>
