@@ -35,6 +35,7 @@ function SectionHead({
   onCancel,
   showAction = true,
   actionLabel,
+  saveDisabled = false,
 }: {
   title: string;
   icon: React.ReactNode;
@@ -45,6 +46,8 @@ function SectionHead({
   onCancel?: () => void;
   showAction?: boolean;
   actionLabel?: string;
+  /** «Зберегти» сіре й неактивне, поки не заповнено обов'язкові поля */
+  saveDisabled?: boolean;
 }) {
   return (
     <div className="flex items-center justify-between gap-4 border-b-2 border-line pb-2.5 max-sm:flex-wrap max-sm:gap-y-2.5">
@@ -73,13 +76,21 @@ function SectionHead({
             )}
             <button
               type="submit"
-              disabled={pending}
-              className="flex cursor-pointer items-center gap-2.5 text-[14px] font-semibold leading-[1.4] text-[#121212] transition-opacity hover:opacity-70 disabled:opacity-50"
+              disabled={pending || saveDisabled}
+              className={cn(
+                "flex items-center gap-2.5 text-[14px] font-semibold leading-[1.4] transition-opacity",
+                saveDisabled
+                  ? "cursor-not-allowed text-muted"
+                  : "cursor-pointer text-[#121212] hover:opacity-70 disabled:opacity-50",
+              )}
             >
               {actionLabel ?? "Зберегти"}
               <Check
                 aria-hidden
-                className="size-6 text-orange lg:size-5"
+                className={cn(
+                  "size-6 lg:size-5",
+                  saveDisabled ? "text-muted" : "text-orange",
+                )}
                 strokeWidth={2}
               />
             </button>
@@ -177,11 +188,14 @@ function SelectInput({
   label,
   defaultValue,
   options,
+  onChange,
 }: {
   name: string;
   label: string;
   defaultValue: string;
   options: Choice[];
+  /** Для полів, від яких залежать інші (перевізник → магазин) */
+  onChange?: (value: string) => void;
 }) {
   const [value, setValue] = useState(defaultValue);
   return (
@@ -190,9 +204,83 @@ function SelectInput({
       name={name}
       label={label}
       value={value}
-      onChange={setValue}
+      onChange={(next) => {
+        setValue(next);
+        onChange?.(next);
+      }}
       options={options}
     />
+  );
+}
+
+type DeliveryChoice = Choice & { pickup?: boolean };
+
+/**
+ * «Перевізник» і те, що від нього залежить: для самовивозу замість «Номер
+ * складу / вулиця» — вибір магазину, а його id іде в те саме поле
+ * `deliveryInfo`, звідки його бере оформлення замовлення. Живе лише в режимі
+ * редагування (key), тож скасування повертає значення з профілю.
+ */
+function CarrierRows({
+  profile,
+  editing,
+  deliveries,
+  shops,
+}: {
+  profile: Profile;
+  editing: boolean;
+  deliveries: DeliveryChoice[];
+  shops: Choice[];
+}) {
+  const [carrier, setCarrier] = useState(profile.deliveryId ?? "");
+  const wasPickup = deliveries.find(
+    (d) => d.value === profile.deliveryId,
+  )?.pickup;
+  const pickup =
+    shops.length > 0 &&
+    Boolean(deliveries.find((d) => d.value === carrier)?.pickup);
+  const shopName = shops.find((s) => s.value === profile.deliveryInfo)?.label;
+
+  return (
+    <>
+      <Row
+        label="Перевізник:"
+        value={profile.deliveryName ?? ""}
+        editing={editing}
+      >
+        <SelectInput
+          name="delivery"
+          label="Перевізник"
+          defaultValue={profile.deliveryId ?? ""}
+          options={deliveries}
+          onChange={setCarrier}
+        />
+      </Row>
+      {editing ? (
+        pickup ? (
+          <Row label="Магазин:" value="" editing>
+            <SelectInput
+              name="deliveryInfo"
+              label="Магазин"
+              defaultValue={shopName ? profile.deliveryInfo : ""}
+              options={shops}
+            />
+          </Row>
+        ) : (
+          <Row label="Номер складу / вулиця:" value="" editing>
+            <TextInput
+              name="deliveryInfo"
+              /* Id магазину з профілю в текстове поле не тягнемо */
+              defaultValue={wasPickup ? "" : profile.deliveryInfo}
+            />
+          </Row>
+        )
+      ) : wasPickup && shops.length > 0 ? (
+        <Row label="Магазин:" value={shopName ?? ""} />
+      ) : (
+        <Row label="Номер складу / вулиця:" value={profile.deliveryInfo} />
+      )}
+    </>
   );
 }
 
@@ -333,12 +421,14 @@ function DeliverySection({
   regions,
   payMethods,
   deliveries,
+  shops,
 }: {
   profile: Profile;
   countries: Choice[];
   regions: Choice[];
   payMethods: Choice[];
-  deliveries: Choice[];
+  deliveries: DeliveryChoice[];
+  shops: Choice[];
 }) {
   const { state, formAction, pending, open, setEditing, cancel } =
     useSection(saveDeliveryAction);
@@ -408,25 +498,13 @@ function DeliverySection({
             options={payMethods}
           />
         </Row>
-        <Row
-          label="Перевізник:"
-          value={profile.deliveryName ?? ""}
+        <CarrierRows
+          key={open ? "edit" : "view"}
+          profile={profile}
           editing={open}
-        >
-          <SelectInput
-            name="delivery"
-            label="Перевізник"
-            defaultValue={profile.deliveryId ?? ""}
-            options={deliveries}
-          />
-        </Row>
-        <Row
-          label="Номер складу / вулиця:"
-          value={profile.deliveryInfo}
-          editing={open}
-        >
-          <TextInput name="deliveryInfo" defaultValue={profile.deliveryInfo} />
-        </Row>
+          deliveries={deliveries}
+          shops={shops}
+        />
       </div>
     </form>
   );
@@ -525,10 +603,23 @@ function PasswordSection({
   );
   const e = state.fieldErrors ?? {};
 
+  /* «Зберегти» активне, лише коли заповнені всі три поля. Прив'язуємо до
+     ключа форми: після успішної зміни поля порожні, і кнопка знову сіра. */
+  const formKey = state.ok ? "done" : "edit";
+  const [filledFor, setFilledFor] = useState<string | null>(null);
+  const checkFilled = () => {
+    const data = new FormData(formRef.current ?? undefined);
+    const all = ["oldPassword", "newPassword", "newPassword2"].every(
+      (name) => String(data.get(name) ?? "").length > 0,
+    );
+    setFilledFor(all ? formKey : null);
+  };
+
   return (
     <form
       ref={formRef}
-      key={state.ok ? "done" : "edit"}
+      key={formKey}
+      onInput={checkFilled}
       action={action}
       noValidate
       className="flex min-w-0 flex-col gap-[30px]"
@@ -538,6 +629,7 @@ function PasswordSection({
         icon={<Lock aria-hidden className={icon} strokeWidth={1.5} />}
         editing
         pending={pending}
+        saveDisabled={filledFor !== formKey}
       />
 
       <div className="-mt-5 flex flex-col gap-2.5">
@@ -664,6 +756,7 @@ export function ProfileSections({
   regions,
   payMethods,
   deliveries,
+  shops,
   siteKey,
 }: {
   profile: Profile;
@@ -675,7 +768,9 @@ export function ProfileSections({
   countries: Choice[];
   regions: Choice[];
   payMethods: Choice[];
-  deliveries: Choice[];
+  deliveries: DeliveryChoice[];
+  /** Власні магазини для самовивозу */
+  shops: Choice[];
 }) {
   return (
     <div className="flex flex-col gap-[50px]">
@@ -691,6 +786,7 @@ export function ProfileSections({
           regions={regions}
           payMethods={payMethods}
           deliveries={deliveries}
+          shops={shops}
         />
       </div>
       <div className="lg:w-[calc(50%-50px)]">

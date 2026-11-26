@@ -7,6 +7,7 @@ import {
 } from "@/lib/api/account";
 import { getOrderOptions } from "@/lib/api/cart";
 import { getSiteKey } from "@/lib/api/auth";
+import { getPickupStores } from "@/lib/api/delivery";
 import { profileOptionsAction } from "@/app/account/profile-details-action";
 
 export const metadata: Metadata = {
@@ -15,15 +16,23 @@ export const metadata: Metadata = {
 };
 
 export default async function ProfilePage() {
-  const [profile, options, orderOptions, typeLabels, emailEditable, siteKey] =
-    await Promise.all([
-      getProfile(),
-      profileOptionsAction(),
-      getOrderOptions(),
-      getUserTypeLabels(),
-      canChangeEmail(),
-      getSiteKey(),
-    ]);
+  const [
+    profile,
+    options,
+    orderOptions,
+    typeLabels,
+    emailEditable,
+    siteKey,
+    shops,
+  ] = await Promise.all([
+    getProfile(),
+    profileOptionsAction(),
+    getOrderOptions(),
+    getUserTypeLabels(),
+    canChangeEmail(),
+    getSiteKey(),
+    getPickupStores(),
+  ]);
 
   if (!profile) {
     return (
@@ -48,7 +57,9 @@ export default async function ProfilePage() {
       deliveries={orderOptions.deliveries.map((d) => ({
         value: d.id,
         label: d.name,
+        pickup: Boolean(d.selfPickup),
       }))}
+      shops={shops}
     />
   );
 }

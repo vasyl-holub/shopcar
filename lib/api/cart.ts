@@ -83,6 +83,7 @@ const CART_ITEMS = /* GraphQL */ `
           deliveryDaysHumanize
           canBuy
           comment
+          description
         }
       }
     }

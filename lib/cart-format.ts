@@ -56,6 +56,8 @@ export type CartItem = {
     canBuy: boolean | null;
     /** Примітка складу до конкретної пропозиції */
     comment?: string | null;
+    /** Опис пропозиції (разом із коментарем — значок документа біля складу) */
+    description?: string | null;
   } | null;
 };
 

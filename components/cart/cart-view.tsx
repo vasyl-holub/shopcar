@@ -3,7 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ImageOff } from "lucide-react";
+import { FileText, ImageOff, Info } from "lucide-react";
 import { ProductPhoto } from "@/components/catalog/product-photo";
 import { ShopIcon } from "@/components/ui/shop-icon";
 import { StoreIcon } from "@/components/shop/store-icon";
@@ -18,6 +18,7 @@ import {
 } from "@/app/cart/actions";
 import { setCartCount } from "@/lib/cart-count";
 import type { CartItem } from "@/lib/cart-format";
+import { localStoreLabel } from "@/lib/store-label";
 import type { CurrencyRate } from "@/lib/api/currency";
 import { cn } from "@/lib/cn";
 
@@ -142,9 +143,9 @@ function Quantity({
 
 /** Колонки таблиці: чекбокс, товар, строк, ціна, кількість, сума, видалити */
 const columns =
-  "grid grid-cols-[42px_352px_minmax(130px,1fr)_98px_minmax(70px,1fr)_141px_minmax(90px,1fr)_42px] items-center " +
-  "lg:grid-cols-[34px_minmax(250px,500px)_minmax(150px,1fr)_44px_minmax(80px,1fr)_141px_minmax(90px,1fr)_34px] " +
-  "xl:grid-cols-[34px_minmax(340px,500px)_minmax(150px,1fr)_44px_minmax(80px,1fr)_141px_minmax(90px,1fr)_34px]";
+  "grid grid-cols-[42px_352px_minmax(190px,1fr)_98px_minmax(70px,1fr)_141px_minmax(90px,1fr)_42px] items-center " +
+  "lg:grid-cols-[34px_minmax(250px,500px)_minmax(210px,1fr)_44px_minmax(80px,1fr)_141px_minmax(90px,1fr)_34px] " +
+  "xl:grid-cols-[34px_minmax(340px,500px)_minmax(210px,1fr)_44px_minmax(80px,1fr)_141px_minmax(90px,1fr)_34px]";
 
 /* --------------------------------------------------------------- Рядок */
 
@@ -262,6 +263,18 @@ function CartRow({
 
   const title = product?.name ?? "Позиція";
   const delivery = deliveryInfo(item);
+  /* Опис пропозиції: як у сторінці товару — опис і коментар через крапку;
+     окремо попередження складу (його ж показує вікно «Додати товар») */
+  const offerNote = (() => {
+    const text = [item.priceItem?.description, item.priceItem?.comment]
+      .map((t) => t?.trim())
+      .filter(Boolean)
+      .join(". ");
+    const warning = item.store?.warning?.trim() ?? "";
+    /* Для власних магазинів опис, як і на сторінці товару, не показуємо */
+    const shown = item.store?.isLocalStore ? "" : text;
+    return shown || warning ? { text: shown, warning } : null;
+  })();
   const specs = specLines(item);
   const storeInfo = storeLines(item);
   /* Коментарі: покупця до позиції та склад до цієї пропозиції */
@@ -351,68 +364,117 @@ function CartRow({
         </div>
       </div>
 
-      <div className="flex items-center gap-5 lg:gap-[30px] lg:px-2.5">
-        {delivery.text ? (
+      <div className="flex items-center gap-2.5 lg:gap-3 lg:px-2.5">
+        {/* Як на сторінці товару: значок документа — опис пропозиції та
+            попередження складу; значок складу без підказки, уся інформація —
+            на назві складу чи строку доставки */}
+        {offerNote && (
           <Tooltip
-            label={delivery.text}
+            label="Опис пропозиції"
             className="shrink-0"
             trigger={
-              <StoreIcon
-                iconUrl={item.store?.isLocalStore ? null : item.store?.iconUrl}
-                fallback={delivery.icon}
-                className="h-6 shrink-0"
+              <FileText
+                aria-hidden
+                className="size-6 text-shop-black"
+                strokeWidth={1.75}
               />
             }
           >
+            <span className="flex max-w-[260px] flex-col gap-1.5">
+              {offerNote.text && <span>{offerNote.text}</span>}
+              {offerNote.warning && (
+                <span>
+                  <span className="font-semibold">Попередження:</span>{" "}
+                  {offerNote.warning}
+                </span>
+              )}
+            </span>
+          </Tooltip>
+        )}
+        <StoreIcon
+          iconUrl={item.store?.isLocalStore ? null : item.store?.iconUrl}
+          fallback={delivery.icon}
+          className="h-6 shrink-0"
+        />
+        {(() => {
+          /* Свій магазин — назва (місто), решта — строк доставки */
+          const label =
+            localStoreLabel(
+              item.store && {
+                isLocal: Boolean(item.store.isLocalStore),
+                name: item.store.name,
+                publicNote: item.store.publicNote,
+                number: item.store.number ?? null,
+              },
+            ) ||
+            days ||
+            "Уточнюється";
+          const lines = [...storeInfo];
+          /* Строк уже видно в колонці, коли там він і стоїть */
+          if (days && label !== days) {
+            lines.push({ label: "Дата доставки", value: days });
+          }
+          const headline = item.store?.iconTitle?.trim() || delivery.text;
+          const hasCard = lines.length > 0 || Boolean(headline);
+
+          const text = (
             <span
               className={cn(
-                "block whitespace-nowrap",
-                delivery.danger && "font-semibold text-[#ff0028]",
+                "whitespace-nowrap text-[16px] font-semibold leading-[1.5]",
+                item.store?.isLocalStore ? "text-shop-green" : "text-orange",
               )}
             >
-              {delivery.text}
+              <span
+                className={cn(
+                  hasCard &&
+                    "underline decoration-dotted decoration-1 underline-offset-[3px]",
+                )}
+              >
+                {label}
+              </span>
+              {hasCard && (
+                <Info
+                  aria-hidden
+                  className="relative -top-1.5 ml-0.5 inline size-3.5"
+                  strokeWidth={2}
+                />
+              )}
             </span>
-            {item.store?.publicNote && (
-              <span className="mt-1 block max-w-[260px] text-muted">
-                {item.store.publicNote}
-              </span>
-            )}
-          </Tooltip>
-        ) : (
-          <StoreIcon
-            iconUrl={item.store?.isLocalStore ? null : item.store?.iconUrl}
-            fallback={delivery.icon}
-            className="h-6 shrink-0"
-          />
-        )}
-        {storeInfo.length > 0 ? (
-          <Tooltip
-            label="Інформація про склад"
-            trigger={
-              <span className="whitespace-nowrap text-[16px] font-semibold leading-[1.5] text-orange">
-                {days || "Уточнюється"}
-              </span>
-            }
-          >
-            <ul className="flex max-w-[300px] flex-col gap-[5px]">
-              {storeInfo.map((row) => (
-                <li
-                  key={row.label}
-                  className={cn("flex gap-[5px]", row.bold && "font-semibold")}
-                >
-                  <span className="shrink-0">{row.label}:</span>
-                  <span className={row.bold ? undefined : "text-muted"}>
-                    {row.value}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </Tooltip>
-        ) : (
-          <span className="whitespace-nowrap text-[16px] font-semibold leading-[1.5] text-orange">
-            {days || "Уточнюється"}
-          </span>
-        )}
+          );
+
+          return hasCard ? (
+            <Tooltip label="Інформація про склад" trigger={text}>
+              <ul className="flex max-w-[300px] flex-col gap-[5px]">
+                {headline && (
+                  <li
+                    className={cn(
+                      "font-semibold",
+                      delivery.danger && "text-[#ff0028]",
+                    )}
+                  >
+                    {headline}
+                  </li>
+                )}
+                {lines.map((row) => (
+                  <li
+                    key={row.label}
+                    className={cn(
+                      "flex gap-[5px]",
+                      row.bold && "font-semibold",
+                    )}
+                  >
+                    <span className="shrink-0">{row.label}:</span>
+                    <span className={row.bold ? undefined : "text-muted"}>
+                      {row.value}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </Tooltip>
+          ) : (
+            text
+          );
+        })()}
       </div>
 
       <div className="flex items-center justify-center">

@@ -26,6 +26,8 @@ function Badge({ value }: { value?: number }) {
 
 function ProfileMenu({ onClose }: { onClose: () => void }) {
   const [counts, setCounts] = useState<Counts | null>(null);
+  /* Непрочитані — те саме число, що й біля значка профілю в шапці */
+  const unread = useUnreadCount();
 
   useEffect(() => {
     let alive = true;
@@ -37,7 +39,7 @@ function ProfileMenu({ onClose }: { onClose: () => void }) {
 
   const left: { href: string; label: string; badge?: number }[] = [
     { href: "/account/profile", label: "Профіль" },
-    { href: "/account", label: "Повідомлення" },
+    { href: "/account", label: "Повідомлення", badge: unread },
     { href: "/account/garage", label: "Мої авто", badge: counts?.cars },
     { href: "/account/favorites", label: "Вибране", badge: counts?.favorites },
     { href: "/account/orders", label: "Замовлення" },

@@ -20,6 +20,7 @@ import { ProductPhoto } from "@/components/catalog/product-photo";
 import { BuyButton } from "@/components/shop/buy-button";
 import { StoreIcon } from "@/components/shop/store-icon";
 import { hasStock, isUnlimitedCount } from "@/lib/stock";
+import { localStoreLabel } from "@/lib/store-label";
 import { useProductExtras } from "@/components/product/use-product-extras";
 import { RangeFilter, type Range } from "@/components/catalog/range-filter";
 import { Pager } from "@/components/ui/pager";
@@ -95,18 +96,7 @@ const minPrice = (offers: ProductOffer[]) =>
 const filterShop = (store: ProductOffer["store"]) =>
   store?.name?.trim() || shopLabel(store) || null;
 
-/**
- * Назва локального складу (магазину): гостям бекенд не віддає `name`,
- * тому місто беремо з публічної примітки: «Товар на складі м. Львів, …».
- */
-const shopLabel = (store: ProductOffer["store"]) => {
-  if (!store?.isLocal) return null;
-  return (
-    store.name?.trim() ||
-    /м\.\s*([^,]+)/.exec(store.publicNote ?? "")?.[1]?.trim() ||
-    (store.number ? `Склад № ${store.number}` : null)
-  );
-};
+const shopLabel = (store: ProductOffer["store"]) => localStoreLabel(store);
 
 function bounds(values: number[]): Range {
   const clean = values.filter((v) => Number.isFinite(v));
