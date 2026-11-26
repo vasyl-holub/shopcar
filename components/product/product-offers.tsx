@@ -295,6 +295,14 @@ function OfferLine({
   /* Є що показати в підказці: значок і назва складу тоді підкреслені
      пунктиром, а біля назви стоїть «i», як у плашках */
   const hasCard = rows.length > 0 || Boolean(store?.iconTitle);
+  /* «i» біля значка того самого кольору, що й значок: свої магазини —
+     помаранчеві, склади з поверненням — зелені, без повернення — червоні */
+  const noReturn = /немає|не підлягає/i.test(store?.iconTitle ?? "");
+  const iconTone = store?.isLocal
+    ? "text-orange"
+    : !noReturn && (returns || store?.iconTitle)
+      ? "text-shop-green"
+      : "text-danger-500";
   const storeTip = (icon: React.ReactNode, mark: "line" | "plain" = "line") =>
     !hasCard ? (
       icon
@@ -312,7 +320,10 @@ function OfferLine({
                   абсолютно, щоб вона не розширювала колонку зі значками */}
               <Info
                 aria-hidden
-                className="absolute -right-2.5 -top-1 size-3 text-orange lg:-right-3 lg:-top-1.5 lg:size-3.5"
+                className={cn(
+                  "absolute -right-2.5 -top-1 size-3 lg:-right-3 lg:-top-1.5 lg:size-3.5",
+                  iconTone,
+                )}
                 strokeWidth={2}
               />
             </span>
