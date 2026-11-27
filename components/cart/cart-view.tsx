@@ -391,11 +391,24 @@ function CartRow({
             </span>
           </Tooltip>
         )}
-        <StoreIcon
-          iconUrl={item.store?.isLocalStore ? null : item.store?.iconUrl}
-          fallback={delivery.icon}
-          className="h-6 shrink-0"
-        />
+        {(() => {
+          const icon = (
+            <StoreIcon
+              iconUrl={item.store?.isLocalStore ? null : item.store?.iconUrl}
+              fallback={delivery.icon}
+              className="h-6 shrink-0"
+            />
+          );
+          /* Підказка значка — лише «Заголовок іконки складу» з адмінки */
+          const title = item.store?.iconTitle?.trim();
+          return title ? (
+            <Tooltip label={title} className="shrink-0" trigger={icon}>
+              <span className="font-semibold">{title}</span>
+            </Tooltip>
+          ) : (
+            icon
+          );
+        })()}
         {(() => {
           /* Свій магазин — назва (місто), решта — строк доставки */
           const label =
@@ -414,7 +427,7 @@ function CartRow({
           if (days && label !== days) {
             lines.push({ label: "Дата доставки", value: days });
           }
-          const headline = item.store?.iconTitle?.trim() || delivery.text;
+          const headline = delivery.text;
           const hasCard = lines.length > 0 || Boolean(headline);
 
           const text = (

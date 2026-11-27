@@ -287,13 +287,10 @@ function OfferLine({
   /* Строк уже видно в самій колонці, коли там він і стоїть */
   add("Дата доставки", label === days || days === "—" ? "" : days);
 
-  const hasLabelCard = rows.length > 0 || Boolean(store?.iconTitle);
+  const hasLabelCard = rows.length > 0;
 
   const card = (
     <span className="flex min-w-[210px] max-w-[300px] flex-col gap-[5px]">
-      {store?.iconTitle && (
-        <span className="font-semibold">{store.iconTitle}</span>
-      )}
       {rows.map((r) => (
         <span key={r.label} className="flex gap-[5px]">
           <span className={r.bold ? "shrink-0 font-semibold" : "shrink-0"}>
@@ -304,6 +301,16 @@ function OfferLine({
       ))}
     </span>
   );
+
+  /* Значок складу: при наведенні — лише «Заголовок іконки складу» з адмінки */
+  const withTitle = (icon: React.ReactNode) =>
+    store?.iconTitle ? (
+      <Tooltip label={store.iconTitle} className="shrink-0" trigger={icon}>
+        <span className="font-semibold">{store.iconTitle}</span>
+      </Tooltip>
+    ) : (
+      icon
+    );
 
   const daysText = (
     <span
@@ -337,7 +344,7 @@ function OfferLine({
       <div className="flex min-w-0 items-center gap-2.5 lg:gap-3">
         <span className="flex w-[84px] shrink-0 items-center gap-1 lg:w-[88px]">
           {store?.isLocal ? (
-            <StoreIcon fallback="storage" className="h-5 lg:h-6" />
+            withTitle(<StoreIcon fallback="storage" className="h-5 lg:h-6" />)
           ) : (
             <>
               {offer.note && (
@@ -354,16 +361,18 @@ function OfferLine({
                   <span className="block max-w-[260px]">{offer.note}</span>
                 </Tooltip>
               )}
-              <StoreIcon
-                iconUrl={store?.iconUrl}
-                fallback={returns ? "arrow-green" : "arrow-red"}
-                className="h-5 lg:h-6"
-              />
+              {withTitle(
+                <StoreIcon
+                  iconUrl={store?.iconUrl}
+                  fallback={returns ? "arrow-green" : "arrow-red"}
+                  className="h-5 lg:h-6"
+                />,
+              )}
             </>
           )}
         </span>
 
-        {/* Уся інформація про склад — лише на назві чи строку доставки */}
+        {/* Уся інформація про склад — на назві чи строку доставки */}
         {hasLabelCard ? (
           <Tooltip
             label="Інформація про склад"
